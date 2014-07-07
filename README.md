@@ -72,7 +72,7 @@ var_dump($users);
 	// all INSERT, UPDATE, DELETE query append into batch query stack for execution after applyBatch
 	$uuid = $database->query('SELECT uuid() as "uuid" FROM system.schema_keyspaces LIMIT 1;')[0]['uuid'];
 	$database->query(
-			'INSERT INTO "users" ("id", "name", "email") VALUES (:id, :name, :email);",
+			'INSERT INTO "users" ("id", "name", "email") VALUES (:id, :name, :email);',
 			[
 				'id' => $uuid,
 				'name' => 'Mark',
