@@ -1,0 +1,18 @@
+{
+	"name": "evseevnn/php-cassandra-binary",
+	"description": "PHP library for Cassandra database via a binary protocol",
+	"minimum-stability": "dev",
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Evseev Nikolay",
+			"email": "evseevnn@gmail.com"
+		}
+	],
+	"require": {
+		"php": ">=5.4.0"
+	},
+	"autoload": {
+		"psr-4": { "Cassandra": "Cassandra" }
+	}
+}
