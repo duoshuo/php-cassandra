@@ -13,6 +13,6 @@
 		"php": ">=5.4.0"
 	},
 	"autoload": {
-		"psr-4": { "Cassandra": "Cassandra" }
+		"psr-4": { "Cassandra\\": "Cassandra/" }
 	}
 }
