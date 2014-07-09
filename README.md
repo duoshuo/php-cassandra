@@ -1,5 +1,5 @@
-Cassablanka
-===========
+php-cassandra-binary
+====================
 
 Cassandra client library for PHP, using the native binary protocol.
 
