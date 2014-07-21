@@ -73,7 +73,6 @@ class Database {
 		switch($responseType) {
 			case OpcodeEnum::ERROR:
 				throw new ConnectionException($response->getData());
-				break;
 
 			case OpcodeEnum::AUTHENTICATE:
 				$nodeOptions = $this->connection->getNode()->getOptions();
