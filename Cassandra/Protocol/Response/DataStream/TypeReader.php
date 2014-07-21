@@ -10,7 +10,9 @@ final class TypeReader {
 	 * @return mixed
 	 */
 	public static function readFromStream(DataStream $stream) {
-		$data['type'] = $stream->readShort();
+		$data = [
+			'type' => $stream->readShort()
+		];
 		switch ($data['type']) {
 			case DataTypeEnum::CUSTOM:
 				$data['name'] = $stream->readString();
@@ -24,7 +26,6 @@ final class TypeReader {
 				$data['value'] = self::readFromStream($stream);
 				break;
 		}
-
 		return $data;
 	}
 
