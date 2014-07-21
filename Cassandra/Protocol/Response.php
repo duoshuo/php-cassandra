@@ -58,8 +58,7 @@ class Response {
 				return null;
 
 			case OpcodeEnum::AUTHENTICATE:
-				$data = unpack('n', $this->binary);
-				return $data[1];
+				return unpack('n', $this->binary)[1];
 
 			case OpcodeEnum::SUPPORTED:
 				/**
@@ -107,13 +106,13 @@ class Response {
 					return "Bad credentials: {$stream->readString()}";
 				},
 			ErrorCodesEnum::UNAVAILABLE_EXCEPTION => function(DataStream $stream) {
-					$errorData = [
+					$errorData = var_export([
 						'consistency' => $stream->readInt(),
 						'node' => $stream->readInt(),
 						'replica' => $stream->readInt()
-					];
+					], true);
 
-					return 'Unavailable exception. ' . var_export($errorData, true);
+					return "Unavailable exception. Error data: {$errorData}";
 				},
 			ErrorCodesEnum::OVERLOADED => function(DataStream $stream) {
 					return "Overloaded: {$stream->readString()}";
@@ -125,22 +124,22 @@ class Response {
 					return "Truncate_error: {$stream->readString()}";
 				},
 			ErrorCodesEnum::WRITE_TIMEOUT => function(DataStream $stream) {
-					$errorData = [
+					$errorData = var_export([
 						'consistency' => $stream->readInt(),
 						'node' => $stream->readInt(),
 						'replica' => $stream->readInt(),
 						'writeType' => $stream->readString()
-					];
-					return 'Write_timeout. ' . var_export($errorData, true);
+					], true);
+					return "Write_timeout. Error data: {$errorData}";
 				},
 			ErrorCodesEnum::READ_TIMEOUT => function(DataStream $stream) {
-					$errorData = [
+					$errorData = var_export([
 						'consistency' => $stream->readInt(),
 						'node' => $stream->readInt(),
 						'replica' => $stream->readInt(),
 						'dataPresent' => $stream->readChar()
-					];
-					return 'Read_timeout' . var_export($errorData, true);
+					], true);
+					return "Read_timeout. Error data: {$errorData}";
 				},
 			ErrorCodesEnum::SYNTAX_ERROR => function(DataStream $stream) {
 					return "Syntax_error: {$stream->readString()}";
@@ -212,9 +211,7 @@ class Response {
 
 		$columns = [];
 		for ($i = 0; $i < $columnCount; ++$i) {
-			if ($globalTableSpec) {
-				/** @var string $keyspace */
-				/** @var string $tableName */
+			if (isset($keyspace, $tableName)) {
 				$columnData = [
 					'keyspace' => $keyspace,
 					'tableName' => $tableName,

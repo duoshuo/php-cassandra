@@ -47,8 +47,7 @@ class DataStream {
 	 * @return int
 	 */
 	public function readChar() {
-		$unpacked = unpack('C', $this->read(1));
-		return $unpacked[1];
+		return unpack('C', $this->read(1))[1];
 	}
 
 	/**
@@ -57,8 +56,7 @@ class DataStream {
 	 * @return int
 	 */
 	public function readShort() {
-		$unpacked = unpack('n', $this->read(2));
-		return $unpacked[1];
+		return unpack('n', $this->read(2))[1];
 	}
 
 	/**
@@ -67,8 +65,7 @@ class DataStream {
 	 * @return int
 	 */
 	public function readInt() {
-		$unpacked = unpack('N', $this->read(4));
-		return $unpacked[1];
+		return unpack('N', $this->read(4))[1];
 	}
 
 	/**
@@ -171,8 +168,7 @@ class DataStream {
 	 * @return float
 	 */
 	public function readFloat() {
-		$unpacked = unpack('f', strrev($this->read(4)));
-		return $unpacked[1];
+		return unpack('f', strrev($this->read(4)))[1];
 	}
 
 	/**
@@ -181,8 +177,7 @@ class DataStream {
 	 * @return double
 	 */
 	public function readDouble() {
-		$unpacked = unpack('d', strrev($this->read(8)));
-		return $unpacked[1];
+		return unpack('d', strrev($this->read(8)))[1];
 	}
 
 	/**
