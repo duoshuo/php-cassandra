@@ -44,7 +44,7 @@ $nodes = [
 ];
 
 // Connect to database.
-$database = new Cassandra\Database($nodes, 'my_keyspace');`
+$database = new Cassandra\Database($nodes, 'my_keyspace');
 $database->connect();
 
 // Run query.
