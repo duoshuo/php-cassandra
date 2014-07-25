@@ -7,6 +7,14 @@ PHP library for Cassandra
 
 Cassandra client library for PHP, using the native binary protocol.
 
+## Roadmap for version 0.2.0
+* UUID generation
+* timestamp only with microsecond
+* using v2 protocol
+* speedup
+* the ability to specify the settings (setup default consistency level and more)
+* more fixes
+
 ## Installation
 
 PHP 5.4+ is required. There is no need for additional libraries.
