@@ -50,7 +50,7 @@ class Database {
 	 * @param string $keyspace
 	 * @param array $options
 	 */
-	public function __construct(array $nodes, $keyspace, array $options = []) {
+	public function __construct(array $nodes, $keyspace = '', array $options = []) {
 		$this->cluster = new Cluster($nodes);
 		$this->connection = new Connection($this->cluster);
 		$this->options = array_merge($this->options, $options);
@@ -73,7 +73,6 @@ class Database {
 		switch($responseType) {
 			case OpcodeEnum::ERROR:
 				throw new ConnectionException($response->getData());
-				break;
 
 			case OpcodeEnum::AUTHENTICATE:
 				$nodeOptions = $this->connection->getNode()->getOptions();
@@ -85,10 +84,7 @@ class Database {
 				);
 		}
 		if ($responseType === OpcodeEnum::ERROR) throw new ConnectionException($response->getData());
-		$response = $this->connection->sendRequest(
-			RequestFactory::query("USE {$this->keyspace};", ConsistencyEnum::CONSISTENCY_QUORUM)
-		);
-		if ($response->getType() === OpcodeEnum::ERROR) throw new CassandraException($response->getData());
+		if (!empty($this->keyspace)) $this->setKeyspace($this->keyspace);
 
 		return true;
 	}
@@ -188,5 +184,19 @@ class Database {
 		}
 
 		return !empty($data) ? $data : $response->getType() === OpcodeEnum::RESULT;
+	}
+
+	/**
+	 * @param string $keyspace
+	 * @throws Exception\CassandraException
+	 */
+	public function setKeyspace($keyspace) {
+		$this->keyspace = $keyspace;
+		if ($this->connection->isConnected()) {
+			$response = $this->connection->sendRequest(
+				RequestFactory::query("USE {$this->keyspace};", ConsistencyEnum::CONSISTENCY_QUORUM)
+			);
+			if ($response->getType() === OpcodeEnum::ERROR) throw new CassandraException($response->getData());
+		}
 	}
 }

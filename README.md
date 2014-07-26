@@ -1,26 +1,25 @@
-php-cassandra-binary
-====================
+PHP library for Cassandra
+=========================
+
+<a href="https://codeclimate.com/github/evseevnn/php-cassandra-binary"><img src="https://codeclimate.com/github/evseevnn/php-cassandra-binary.png" /></a>
+<a href="https://scrutinizer-ci.com/g/evseevnn/php-cassandra-binary/"><img src="https://scrutinizer-ci.com/g/evseevnn/php-cassandra-binary/badges/quality-score.png?b=master" /></a>
+<a href="https://scrutinizer-ci.com/g/evseevnn/php-cassandra-binary/"><img src="https://scrutinizer-ci.com/g/evseevnn/php-cassandra-binary/badges/build.png?b=master" /></a>
 
 Cassandra client library for PHP, using the native binary protocol.
+
+## Roadmap for version 0.2.0
+* UUID generation
+* timestamp only with microsecond
+* using v2 protocol
+* speedup
+* the ability to specify the settings (setup default consistency level and more)
+* more fixes
 
 ## Installation
 
 PHP 5.4+ is required. There is no need for additional libraries.
 
-Add repository to composer.json
-
-```
-	...
-	"repositories": [
-		{
-			"type": "vcs",
-			"url": "https://github.com/evseevnn/php-cassandra-binary"
-		}
-	],
-	...
-```
-
-Append dependency
+Append dependency into composer.json
 
 ```
 	...
@@ -62,6 +61,11 @@ var_dump($users);
 			)
 		)
 */
+
+// Keyspace can be changed at runtime
+$database->setKeyspace('my_other_keyspace');
+// Get from other keyspace
+$urlsFromFacebook = $database->query('SELECT * FROM "urls" WHERE "host" = :host', ['host' => 'facebook.com']);
 
 ```
 

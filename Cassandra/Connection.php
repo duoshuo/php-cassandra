@@ -51,7 +51,7 @@ class Connection {
 	 * @return bool
 	 */
 	public function isConnected() {
-		return $this->connection !== null && socket_listen($this->connection);
+		return $this->connection !== null;
 	}
 
 	/**
