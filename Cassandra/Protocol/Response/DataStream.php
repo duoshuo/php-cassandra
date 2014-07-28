@@ -157,7 +157,7 @@ class DataStream {
 		$map = array();
 		$count = $this->readShort();
 		for ($i = 0; $i < $count; ++$i) {
-			$map[$this->readByType($keyType)] = $this->readByType($valueType);
+			$map[$this->readByType($keyType, true)] = $this->readByType($valueType, true);
 		}
 		return $map;
 	}
@@ -222,14 +222,15 @@ class DataStream {
 
 	/**
 	 * @param array $type
+	 * @param bool $isCollectionElement for collection element used other alg. a temporary solution
 	 * @return mixed
 	 */
-	public function readByType(array $type) {
+	public function readByType(array $type, $isCollectionElement = false) {
 		switch ($type['type']) {
 			case DataTypeEnum::ASCII:
 			case DataTypeEnum::VARCHAR:
 			case DataTypeEnum::TEXT:
-				return $this->data;
+				return $isCollectionElement ? $this->readString() : $this->data;
 			case DataTypeEnum::BIGINT:
 			case DataTypeEnum::COUNTER:
 			case DataTypeEnum::VARINT:
