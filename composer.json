@@ -1,7 +1,7 @@
 {
 	"name": "evseevnn/php-cassandra-binary",
 	"description": "PHP library for Cassandra database via a binary protocol",
-	"minimum-stability": "dev",
+	"minimum-stability": "stable",
 	"license": "MIT",
 	"authors": [
 		{

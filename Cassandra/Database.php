@@ -164,7 +164,7 @@ class Database {
 		} else {
 			$response = $this->connection->sendRequest(RequestFactory::prepare($cql));
 			$responseType = $response->getType();
-			if ($responseType !== OpcodeEnum::RESULT)  {
+			if ($responseType !== OpcodeEnum::RESULT) {
 				throw new QueryException($response->getData());
 			} else {
 				$preparedData = $response->getData();
