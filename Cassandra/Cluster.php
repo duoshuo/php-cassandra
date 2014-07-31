@@ -25,9 +25,8 @@ class Cluster {
 	}
 
 	/**
-	 * @throws \InvalidArgumentException
+	 * @return Node
 	 * @throws Exception\ClusterException
-	 * @return Node|null
 	 */
 	public function getRandomNode() {
 		if (empty($this->nodes)) throw new ClusterException('Node list is empty.');
@@ -38,7 +37,7 @@ class Cluster {
 				$node = new Node($nodeKey, $node);
 				unset($this->nodes[$nodeKey]);
 			} else {
-				$node = new Node($nodeKey);
+				$node = new Node($node);
 				unset($this->nodes[$nodeKey]);
 			}
 		} catch (\InvalidArgumentException $e) {
