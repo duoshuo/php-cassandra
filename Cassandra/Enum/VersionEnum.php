@@ -2,6 +2,6 @@
 namespace Cassandra\Enum;
 
 class VersionEnum {
-	const REQUEST = 0x01;
-	const RESPONSE = 0x81;
+	const REQUEST = 0x02;
+	const RESPONSE = 0x82;
 }

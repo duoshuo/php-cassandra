@@ -93,7 +93,7 @@ final class RequestFactory {
 	 * @return \Cassandra\Protocol\Request
 	 */
 	public static function query($cql, $consistency) {
-		$body = pack('N', strlen($cql)) . $cql . pack('n', $consistency);
+		$body = pack('N', strlen($cql)) . $cql . pack('n', $consistency) . pack('C', 1) . pack('n', 0);
 		return new Request(OpcodeEnum::QUERY, $body);
 	}
 
