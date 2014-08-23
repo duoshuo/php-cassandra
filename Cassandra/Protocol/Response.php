@@ -174,7 +174,7 @@ class Response {
 				return null;
 
 			case ResultTypeEnum::ROWS:
-				return new Rows($this->dataStream, $this->getMetadata());
+				return new Rows($this->dataStream, $this->getColumns());
 
 			case ResultTypeEnum::SET_KEYSPACE:
 				return $this->dataStream->readString();
@@ -182,7 +182,7 @@ class Response {
 			case ResultTypeEnum::PREPARED:
 				return [
 					'id' => $this->dataStream->readString(),
-					'metadata' => $this->getMetadata()
+					'columns' => $this->getColumns()
 				];
 
 			case ResultTypeEnum::SCHEMA_CHANGE:
@@ -200,7 +200,7 @@ class Response {
 	 * Return metadata
 	 * @return array
 	 */
-	private function getMetadata() {
+	private function getColumns() {
 		$flags = $this->dataStream->readInt();
 		$columnCount = $this->dataStream->readInt();
 		$globalTableSpec = $flags & 0x0001;
@@ -230,9 +230,6 @@ class Response {
 			$columns[] = $columnData;
 		}
 
-		return [
-			'columnCount' => $columnCount,
-			'columns' => $columns
-		];
+		return $columns;
 	}
 }

@@ -142,7 +142,7 @@ final class RequestFactory {
 		// column names in lower case in metadata
 		$values = array_change_key_case($values);
 
-		foreach($prepareData['metadata']['columns'] as $key => $column) {
+		foreach($prepareData['columns'] as $key => $column) {
 			if (isset($values[$column['name']])) {
 				$value = $values[$column['name']];
 			} elseif (isset($values[$key])) {

@@ -95,6 +95,8 @@ class DataStream {
 	 */
 	public function readBytes() {
 		$length = $this->readInt();
+		if ($length == 4294967295)
+			return null;
 		return $this->read($length);
 	}
 

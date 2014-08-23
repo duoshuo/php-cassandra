@@ -177,10 +177,7 @@ class Database {
 		if ($response->getType() === OpcodeEnum::ERROR) {
 			throw new CassandraException($response->getData());
 		} else {
-			$data = $response->getData();
-			if ($data instanceof Rows) {
-				return $data->asArray();
-			}
+			return $response->getData();
 		}
 
 		return !empty($data) ? $data : $response->getType() === OpcodeEnum::RESULT;
