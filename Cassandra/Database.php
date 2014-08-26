@@ -2,6 +2,7 @@
 namespace Cassandra;
 use Cassandra\Enum\ConsistencyEnum;
 use Cassandra\Enum\OpcodeEnum;
+use Cassandra\Enum\BatchTypeEnum;
 use Cassandra\Exception\CassandraException;
 use Cassandra\Exception\ConnectionException;
 use Cassandra\Exception\QueryException;
@@ -36,14 +37,19 @@ class Database {
 	private $keyspace;
 
 	/**
-	 * @var string
+	 * @var array
 	 */
-	private $batchQuery = '';
+	protected $_batchQueryArray = [];
+
+	/**
+	 * @var int
+	 */
+	protected $_batchType = null;
 
 	/**
 	 * @var array
 	 */
-	private $batchQueryData = [];
+    protected $_preparedCqls = [];
 
 	/**
 	 * @param array $nodes
@@ -101,24 +107,33 @@ class Database {
 	/**
 	 * Start transaction
 	 */
-	public function beginBatch() {
-		if (!$this->batchQuery) {
-			$this->batchQuery = "BEGIN BATCH\n";
-			$this->batchQueryData = [];
+	public function beginBatch($type = BatchTypeEnum::LOGGED) {
+		if (!isset($this->_batchType)) {
+            $this->_batchType = $type;
+            $this->_batchQueryArray = [];
 		}
 	}
 
 	/**
 	 * Exec transaction
 	 */
-	public function applyBatch($consistency = ConsistencyEnum::CONSISTENCY_QUORUM) {
-		$this->batchQuery .= 'APPLY BATCH;';
+	public function applyBatch($consistency = ConsistencyEnum::CONSISTENCY_QUORUM, $serialConsistency = null) {
+        if (!isset($this->_batchType))
+            return false;
+        $body = pack('C', $this->_batchType);
+        $body .= pack('n', count($this->_batchQueryArray)) . implode('', $this->_batchQueryArray);
+
+        $body .= RequestFactory::queryParameters($consistency, $serialConsistency);
 		// exec
-		$result = $this->query($this->batchQuery, $this->batchQueryData, $consistency);
+        $response = $this->connection->sendRequest(RequestFactory::batch($body));
 		// cleaning
-		$this->batchQuery = '';
-		$this->batchQueryData = [];
-		return $result;
+		$this->_batchType = null;
+		$this->_batchQueryArray = [];
+
+        //batch return void kind of RESULT, rows kind of RESULT if conditional
+        if ($response->getType() === OpcodeEnum::ERROR)
+            throw new CassandraException($response->getData());
+        return $response->getData();
 	}
 
 	/**
@@ -126,27 +141,39 @@ class Database {
 	 * @param array $values
 	 */
 	private function appendQueryToStack($cql, array $values) {
-		$valuesModified = false;
-		foreach($values as $key => $value) {
-			if (is_string($key) && isset($this->batchQueryData[$key])) {
-				$newFieldName = $key . self::POSTFIX_DUPLICATE_QUERY_VARIABLE;
-				$cql = str_replace(":{$key}", ":{$newFieldName}", $cql);
-				unset($values[$key]);
-				$values[$newFieldName] = $value;
-				$valuesModified = true;
-			}
-		}
-		if ($valuesModified) {
-			// Retry
-			$this->appendQueryToStack($cql, $values);
-		} else {
-			$this->batchQuery .= rtrim($cql, ';') . ";\n";
-			$this->batchQueryData = array_merge($this->batchQueryData, $values);
-		}
+        $kind = empty($values) ? 0 : 1;
+        $binary = pack('C', $kind);
+
+        if ($kind == 0) {
+            $binary .= pack('N', strlen($cql)) . $cql;
+            // 0 of following values
+            $binary .= pack('n', 0);
+        }
+        else {
+            $preparedData = $this->_getPreparedData($cql);
+            $binary .= pack('n', strlen($preparedData['id'])) . $preparedData['id'];
+            $binary .= RequestFactory::valuesBinary($preparedData, $values);
+        }
+        $this->_batchQueryArray[] = $binary;
 	}
 
-	/**
-	 * Send query into database
+    protected function _getPreparedData($cql) {
+        if (!isset($this->_preparedCqls[$cql])) {
+            $response = $this->connection->sendRequest(RequestFactory::prepare($cql));
+            $responseType = $response->getType();
+            if ($responseType !== OpcodeEnum::RESULT) {
+                throw new QueryException($response->getData());
+            }
+            else {
+                $preparedData = $response->getData();
+            }
+            $this->_preparedCqls[$cql] = $preparedData;
+        }
+        return $this->_preparedCqls[$cql];
+    }
+
+    /**
+     * Send query into database
 	 * @param string $cql
 	 * @param array $values
 	 * @param int $consistency
@@ -154,23 +181,17 @@ class Database {
 	 * @throws Exception\CassandraException
 	 * @return array|null
 	 */
-	public function query($cql, array $values = [], $consistency = ConsistencyEnum::CONSISTENCY_QUORUM) {
-		if ($this->batchQuery && in_array(substr($cql, 0, 6), ['INSERT', 'UPDATE', 'DELETE'])) {
+	public function query($cql, array $values = [], $consistency = ConsistencyEnum::CONSISTENCY_QUORUM, $serialConsistency = null) {
+		if (isset($this->_batchType) && in_array(strtoupper(substr($cql, 0, 6)), ['INSERT', 'UPDATE', 'DELETE'])) {
 			$this->appendQueryToStack($cql, $values);
 			return true;
 		}
 		if (empty($values)) {
-			$response = $this->connection->sendRequest(RequestFactory::query($cql, $consistency));
+			$response = $this->connection->sendRequest(RequestFactory::query($cql, $consistency, $serialConsistency));
 		} else {
-			$response = $this->connection->sendRequest(RequestFactory::prepare($cql));
-			$responseType = $response->getType();
-			if ($responseType !== OpcodeEnum::RESULT) {
-				throw new QueryException($response->getData());
-			} else {
-				$preparedData = $response->getData();
-			}
-			$response = $this->connection->sendRequest(
-				RequestFactory::execute($preparedData, $values, $consistency)
+            $preparedData = $this->_getPreparedData($cql);
+            $response = $this->connection->sendRequest(
+                RequestFactory::execute($preparedData, $values, $consistency, $serialConsistency)
 			);
 		}
 
@@ -191,7 +212,7 @@ class Database {
 		$this->keyspace = $keyspace;
 		if ($this->connection->isConnected()) {
 			$response = $this->connection->sendRequest(
-				RequestFactory::query("USE {$this->keyspace};", ConsistencyEnum::CONSISTENCY_QUORUM)
+				RequestFactory::query("USE {$this->keyspace};", ConsistencyEnum::CONSISTENCY_QUORUM, null)
 			);
 			if ($response->getType() === OpcodeEnum::ERROR) throw new CassandraException($response->getData());
 		}

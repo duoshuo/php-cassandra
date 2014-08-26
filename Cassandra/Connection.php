@@ -82,8 +82,8 @@ class Connection {
 	}
 
 	private function getResponse() {
-		$data = $this->fetchData(8);
-		$data = unpack('Cversion/Cflags/cstream/Copcode/Nlength', $data);
+		$data = $this->fetchData(9);
+		$data = unpack('Cversion/Cflags/nstream/Copcode/Nlength', $data);
 		if ($data['length']) {
 			$body = $this->fetchData($data['length']);
 		} else {

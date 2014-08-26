@@ -1,6 +1,7 @@
 <?php
 namespace Cassandra\Protocol;
 use Cassandra\Enum\OpcodeEnum;
+use Cassandra\Enum\QueryFlagsEnum;
 
 final class RequestFactory {
 
@@ -92,8 +93,9 @@ final class RequestFactory {
 	 * @param int $consistency
 	 * @return \Cassandra\Protocol\Request
 	 */
-	public static function query($cql, $consistency) {
-		$body = pack('N', strlen($cql)) . $cql . pack('n', $consistency) . pack('C', 1) . pack('n', 0);
+	public static function query($cql, $consistency, $serialConsistency) {
+		$body = pack('N', strlen($cql)) . $cql;
+        $body .= self::queryParameters($consistency, $serialConsistency);
 		return new Request(OpcodeEnum::QUERY, $body);
 	}
 
@@ -135,25 +137,10 @@ final class RequestFactory {
 	 * @param int $consistency
 	 * @return \Cassandra\Protocol\Request
 	 */
-	public static function execute(array $prepareData, array $values, $consistency) {
+	public static function execute(array $prepareData, array $values, $consistency, $serialConsistency) {
 		$body = pack('n', strlen($prepareData['id'])) . $prepareData['id'];
-		$body .= pack('n', count($values));
 
-		// column names in lower case in metadata
-		$values = array_change_key_case($values);
-
-		foreach($prepareData['columns'] as $key => $column) {
-			if (isset($values[$column['name']])) {
-				$value = $values[$column['name']];
-			} elseif (isset($values[$key])) {
-				$value = $values[$key];
-			} else {
-				$value = null;
-			}
-			$binary = new BinaryData($column['type'], $value);
-			$body .= pack('N', strlen($binary)) . $binary;
-		}
-		$body .= pack('n', $consistency);
+		$body .= self::queryParameters($consistency, $serialConsistency, $prepareData, $values);
 
 		return new Request(OpcodeEnum::EXECUTE, $body);
 	}
@@ -178,4 +165,48 @@ final class RequestFactory {
 	public function register(array $events) {
 		// TODO
 	}
+
+    public static function batch($body) {
+        return new Request(OpcodeEnum::BATCH, $body);
+    }
+
+    public static function valuesBinary(array $prepareData, array $values) {
+        $valuesBinary = pack('n', count($values));
+        // column names in lower case in metadata
+        $values = array_change_key_case($values);
+
+        foreach($prepareData['columns'] as $key => $column) {
+            if (isset($values[$column['name']])) {
+                $value = $values[$column['name']];
+            } elseif (isset($values[$key])) {
+                $value = $values[$key];
+            } else {
+                $value = null;
+            }
+            $binary = new BinaryData($column['type'], $value);
+            $valuesBinary .= pack('N', strlen($binary)) . $binary;
+        }
+        return $valuesBinary;
+    }
+
+    public static function queryParameters($consistency, $serialConsistency, array $prepareData = array(), array $values = array()) {
+        $binary = pack('n', $consistency);
+
+        $flags = 0;
+        $remainder = '';
+
+        if (!empty($values)) {
+            $flags |= QueryFlagsEnum::VALUES;
+            $remainder .= self::valuesBinary($prepareData, $values);
+        }
+
+        if (isset($serialConsistency)) {
+            $flags |= QueryFlagsEnum::WITH_SERIAL_CONSISTENCY;
+            $remainder .= pack('n', $serialConsistency);
+        }
+
+        $binary .= pack('C', $flags) . $remainder;
+
+        return $binary;
+    }
 }

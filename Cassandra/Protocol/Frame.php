@@ -48,7 +48,7 @@ class Frame {
 	 */
 	public function __toString() {
 		return pack(
-			'CCcCN',
+			'CCnCN',
 			$this->version,
 			$this->flags,
 			$this->stream,

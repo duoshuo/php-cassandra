@@ -15,4 +15,5 @@ class OpcodeEnum {
 	const EXECUTE = 0x0A;
 	const REGISTER = 0x0B;
 	const EVENT = 0x0C;
+	const BATCH = 0x0D;
 }
