@@ -95,7 +95,7 @@ final class RequestFactory {
 	 */
 	public static function query($cql, $consistency, $serialConsistency) {
 		$body = pack('N', strlen($cql)) . $cql;
-        $body .= self::queryParameters($consistency, $serialConsistency);
+		$body .= self::queryParameters($consistency, $serialConsistency);
 		return new Request(OpcodeEnum::QUERY, $body);
 	}
 
@@ -166,47 +166,47 @@ final class RequestFactory {
 		// TODO
 	}
 
-    public static function batch($body) {
-        return new Request(OpcodeEnum::BATCH, $body);
-    }
+	public static function batch($body) {
+		return new Request(OpcodeEnum::BATCH, $body);
+	}
 
-    public static function valuesBinary(array $prepareData, array $values) {
-        $valuesBinary = pack('n', count($values));
-        // column names in lower case in metadata
-        $values = array_change_key_case($values);
+	public static function valuesBinary(array $prepareData, array $values) {
+		$valuesBinary = pack('n', count($values));
+		// column names in lower case in metadata
+		$values = array_change_key_case($values);
 
-        foreach($prepareData['columns'] as $key => $column) {
-            if (isset($values[$column['name']])) {
-                $value = $values[$column['name']];
-            } elseif (isset($values[$key])) {
-                $value = $values[$key];
-            } else {
-                $value = null;
-            }
-            $binary = new BinaryData($column['type'], $value);
-            $valuesBinary .= pack('N', strlen($binary)) . $binary;
-        }
-        return $valuesBinary;
-    }
+		foreach($prepareData['columns'] as $key => $column) {
+			if (isset($values[$column['name']])) {
+				$value = $values[$column['name']];
+			} elseif (isset($values[$key])) {
+				$value = $values[$key];
+			} else {
+				$value = null;
+			}
+			$binary = new BinaryData($column['type'], $value);
+			$valuesBinary .= pack('N', strlen($binary)) . $binary;
+		}
+		return $valuesBinary;
+	}
 
-    public static function queryParameters($consistency, $serialConsistency, array $prepareData = array(), array $values = array()) {
-        $binary = pack('n', $consistency);
+	public static function queryParameters($consistency, $serialConsistency, array $prepareData = array(), array $values = array()) {
+		$binary = pack('n', $consistency);
 
-        $flags = 0;
-        $remainder = '';
+		$flags = 0;
+		$remainder = '';
 
-        if (!empty($values)) {
-            $flags |= QueryFlagsEnum::VALUES;
-            $remainder .= self::valuesBinary($prepareData, $values);
-        }
+		if (!empty($values)) {
+			$flags |= QueryFlagsEnum::VALUES;
+			$remainder .= self::valuesBinary($prepareData, $values);
+		}
 
-        if (isset($serialConsistency)) {
-            $flags |= QueryFlagsEnum::WITH_SERIAL_CONSISTENCY;
-            $remainder .= pack('n', $serialConsistency);
-        }
+		if (isset($serialConsistency)) {
+			$flags |= QueryFlagsEnum::WITH_SERIAL_CONSISTENCY;
+			$remainder .= pack('n', $serialConsistency);
+		}
 
-        $binary .= pack('C', $flags) . $remainder;
+		$binary .= pack('C', $flags) . $remainder;
 
-        return $binary;
-    }
+		return $binary;
+	}
 }
