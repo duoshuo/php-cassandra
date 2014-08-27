@@ -160,14 +160,10 @@ class Database {
     protected function _getPreparedData($cql) {
         if (!isset($this->_preparedCqls[$cql])) {
             $response = $this->connection->sendRequest(RequestFactory::prepare($cql));
-            $responseType = $response->getType();
-            if ($responseType !== OpcodeEnum::RESULT) {
+            if ($response->getType() !== OpcodeEnum::RESULT) {
                 throw new QueryException($response->getData());
             }
-            else {
-                $preparedData = $response->getData();
-            }
-            $this->_preparedCqls[$cql] = $preparedData;
+            $this->_preparedCqls[$cql] = $response->getData();
         }
         return $this->_preparedCqls[$cql];
     }
