@@ -7,13 +7,12 @@ PHP library for Cassandra
 
 Cassandra client library for PHP, using the native binary protocol.
 
-## Roadmap for version 0.2.0
-* UUID generation
-* timestamp only with microsecond
-* using v2 protocol
-* speedup
-* the ability to specify the settings (setup default consistency level and more)
-* more fixes
+## Features
+* Using v3 protocol
+* Support for logged, unlogged and counter batches
+* The ability to specify the consistency and serial consistency
+* Automatic query preparation
+* Support for conditional update/insert
 
 ## Installation
 
@@ -49,6 +48,12 @@ $database->connect();
 
 // Run query.
 $users = $database->query('SELECT * FROM "users" WHERE "id" = :id', ['id' => 'c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc']);
+//Specify the consistency
+$users = $database->query(
+	'SELECT * FROM "users" WHERE "id" = :id',
+	['id' => 'c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc'],
+	Cassandra\Enum\ConsistencyEnum::CONSISTENCY_ONE
+);
 
 var_dump($users);
 /*
@@ -62,6 +67,18 @@ var_dump($users);
 		)
 */
 
+//Run conditional insert and optionally specify the serial consistency
+$database->query(
+	'INSERT INTO users (id, name, email) VALUES (:id, :name, :email) IF NOT EXISTS',
+	array(
+		'id' => 'c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc',
+		'name' => 'userName',
+		'email' => 'user@email.com',
+	),
+	Cassandra\Enum\ConsistencyEnum::CONSISTENCY_ONE,
+	Cassandra\Enum\ConsistencyEnum::CONSISTENCY_LOCAL_SERIAL
+);
+
 // Keyspace can be changed at runtime
 $database->setKeyspace('my_other_keyspace');
 // Get from other keyspace
@@ -69,10 +86,11 @@ $urlsFromFacebook = $database->query('SELECT * FROM "urls" WHERE "host" = :host'
 
 ```
 
-## Using transaction
+## Using Batch
 
 ```php
-	$database->beginBatch();
+    //optionally specify batch type
+	$database->beginBatch(Cassandra\Enum\BatchTypeEnum::UNLOGGED);
 	// all INSERT, UPDATE, DELETE query append into batch query stack for execution after applyBatch
 	$uuid = $database->query('SELECT uuid() as "uuid" FROM system.schema_keyspaces LIMIT 1;')[0]['uuid'];
 	$database->query(
@@ -90,7 +108,8 @@ $urlsFromFacebook = $database->query('SELECT * FROM "urls" WHERE "host" = :host'
 				'email' => 'durov@vk.com'
 			]
 		);
-	$result = $database->applyBatch();
+    //optionally specify the consistency
+	$result = $database->applyBatch(Cassandra\Enum\ConsistencyEnum::CONSISTENCY_QUORUM);
 ```
 
 ## Supported datatypes
