@@ -167,6 +167,24 @@ class Database {
 		}
 		return $this->_preparedCqls[$cql];
 	}
+	
+	/**
+	 * 
+	 * @param string $cql
+	 * @param array $values
+	 * @param int $consistency
+	 * @param int $serialConsistency
+	 */
+	public function exec($cql, array $values = [], $consistency = ConsistencyEnum::CONSISTENCY_QUORUM, $serialConsistency = null){
+		if (empty($values)) {
+			return $this->connection->sendRequest(RequestFactory::query($cql, $consistency, $serialConsistency));
+		} else {
+			$preparedData = $this->_getPreparedData($cql);
+			return $this->connection->sendRequest(
+					RequestFactory::execute($preparedData, $values, $consistency, $serialConsistency)
+			);
+		}
+	}
 
 	/**
 	 * Send query into database

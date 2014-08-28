@@ -232,4 +232,72 @@ class Response {
 
 		return $columns;
 	}
+	
+	/**
+	 * 
+	 * @param unknown $kind
+	 * @throws ResponseException
+	 * @return NULL|\Cassandra\Protocol\Response\Rows
+	 */
+	protected function _throwException($kind){
+		switch($kind){
+			case ResultTypeEnum::VOID:
+				throw new ResponseException('Unexpected Response: VOID');
+		
+			case ResultTypeEnum::ROWS:
+				$rows = new Rows($this->dataStream, $this->getColumns());
+				throw new ResponseException('Unexpected Response: ROWS ' . $rows->count());
+		
+			case ResultTypeEnum::SET_KEYSPACE:
+				throw new ResponseException('Unexpected Response: SET_KEYSPACE ' . $this->dataStream->readString());
+		
+			case ResultTypeEnum::PREPARED:
+				throw new ResponseException('Unexpected Response: PREPARED id:' . $this->dataStream->readString() . ' columns:' . $this->getColumns());
+		
+			case ResultTypeEnum::SCHEMA_CHANGE:
+				throw new ResponseException('Unexpected Response: SCHEMA_CHANGE change:' . $this->dataStream->readString() . ' keyspace:' . $this->dataStream->readString() . ' table:' . $this->dataStream->readString());
+		
+			default:
+				throw new ResponseException('Unexpected Response: ' . $kind);
+		}
+	}
+	
+	/**
+	 * 
+	 * @throws ResponseException
+	 * @return \Cassandra\Protocol\Response\Rows
+	 */
+	public function fetchAll(){
+		$kind = $this->dataStream->readInt();
+		
+		if ($kind !== ResultTypeEnum::ROWS && $kind !== ResultTypeEnum::VOID){
+			$this->_throwException($kind);
+		}
+		
+		return new Rows($this->dataStream, $this->getColumns());
+	}
+	
+	/**
+	 * 
+	 * @return \ArrayObject
+	 */
+	public function fetchRow(){
+		$rows = $this->fetchAll();
+		
+		return isset($rows[0]) ? $rows[0] : null;
+	}
+	
+	/**
+	 * 
+	 * @return mixed
+	 */
+	public function fetchOne(){
+		$rows = $this->fetchAll();
+			
+		foreach($rows as $row)
+			foreach($row as $value)
+				return $value;
+		
+		return null;
+	}
 }
