@@ -32,25 +32,4 @@ class Request extends Frame{
 		}
 		return $valuesBinary;
 	}
-
-	public static function queryParameters($consistency, $serialConsistency, array $prepareData = array(), array $values = array()) {
-		$binary = pack('n', $consistency);
-
-		$flags = 0;
-		$remainder = '';
-
-		if (!empty($values)) {
-			$flags |= Query::FLAG_VALUES;
-			$remainder .= self::valuesBinary($prepareData, $values);
-		}
-
-		if (isset($serialConsistency)) {
-			$flags |= Query::FLAG_WITH_SERIAL_CONSISTENCY;
-			$remainder .= pack('n', $serialConsistency);
-		}
-
-		$binary .= pack('C', $flags) . $remainder;
-
-		return $binary;
-	}
 }

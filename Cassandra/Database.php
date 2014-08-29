@@ -116,7 +116,7 @@ class Database {
 		$body = pack('C', $this->_batchType);
 		$body .= pack('n', count($this->_batchQueryArray)) . implode('', $this->_batchQueryArray);
 
-		$body .= Request\Request::queryParameters($consistency, $serialConsistency);
+		$body .= Request\Query::queryParameters($consistency, $serialConsistency);
 		// exec
 		$response = $this->connection->sendRequest(new Request\Batch($body));
 		// cleaning

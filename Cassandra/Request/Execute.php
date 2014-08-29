@@ -26,9 +26,9 @@ class Execute extends Request{
 	public function __construct(array $prepareData, array $values, $consistency, $serialConsistency) {
 		$body = pack('n', strlen($prepareData['id'])) . $prepareData['id'];
 
-		$body .= self::queryParameters($consistency, $serialConsistency, $prepareData, $values);
+		$body .= Query::queryParameters($consistency, $serialConsistency, $prepareData, $values);
 		
-		parent::__construct(Frame::OPCODE_Execute, $body);
+		parent::__construct(Frame::OPCODE_EXECUTE, $body);
 	}
 	
 }

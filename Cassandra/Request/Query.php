@@ -33,4 +33,24 @@ class Query extends Request{
 		parent::__construct(Frame::OPCODE_QUERY, $body);
 	}
 	
+	public static function queryParameters($consistency, $serialConsistency, array $prepareData = array(), array $values = array()) {
+		$binary = pack('n', $consistency);
+
+		$flags = 0;
+		$remainder = '';
+
+		if (!empty($values)) {
+			$flags |= self::FLAG_VALUES;
+			$remainder .= self::valuesBinary($prepareData, $values);
+		}
+
+		if (isset($serialConsistency)) {
+			$flags |= self::FLAG_WITH_SERIAL_CONSISTENCY;
+			$remainder .= pack('n', $serialConsistency);
+		}
+
+		$binary .= pack('C', $flags) . $remainder;
+
+		return $binary;
+	}
 }
