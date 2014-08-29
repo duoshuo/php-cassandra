@@ -3,6 +3,9 @@ namespace Cassandra\Protocol;
 
 class Frame {
 
+	const FLAG_COMPRESSION = 0x01;
+	const FLAG_TRACING = 0x02;
+	
 	const OPCODE_ERROR = 0x00;
 	const OPCODE_STARTUP = 0x01;
 	const OPCODE_READY = 0x02;

@@ -1,11 +1,9 @@
 <?php
 namespace Cassandra;
 use Cassandra\Cluster\Node;
-use Cassandra\Enum;
 use Cassandra\Exception\ConnectionException;
-use Cassandra\Response;
 use Cassandra\Protocol\Frame;
-use Cassandra\Protocol\Request;
+use Cassandra\Request\Request;
 
 class Connection {
 

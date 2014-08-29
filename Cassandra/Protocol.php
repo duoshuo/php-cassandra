@@ -1,7 +1,7 @@
 <?php
-namespace Cassandra\Enum;
+namespace Cassandra;
 
-class ConsistencyEnum {
+class Protocol {
 	const CONSISTENCY_ANY = 0x0000;
 	const CONSISTENCY_ONE = 0x0001;
 	const CONSISTENCY_TWO = 0x0002;

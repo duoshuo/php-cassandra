@@ -1,11 +1,7 @@
 <?php
 namespace Cassandra;
-use Cassandra\Enum\ConsistencyEnum;
-use Cassandra\Enum\BatchTypeEnum;
 use Cassandra\Exception\CassandraException;
 use Cassandra\Exception\ConnectionException;
-use Cassandra\Exception\QueryException;
-use Cassandra\Protocol\RequestFactory;
 
 class Database {
 
@@ -71,7 +67,7 @@ class Database {
 		if ($this->connection->isConnected()) return true;
 		$this->connection->connect();
 		$response = $this->connection->sendRequest(
-			RequestFactory::startup($this->options)
+			new Request\Startup($this->options)
 		);
 		
 		if ($response instanceof Response\Error)
@@ -80,7 +76,7 @@ class Database {
 		if ($response instanceof Response\Authenticate){
 			$nodeOptions = $this->connection->getNode()->getOptions();
 			$response = $this->connection->sendRequest(
-				RequestFactory::credentials(
+				new Request\Credentials(
 					$nodeOptions['username'],
 					$nodeOptions['password']
 				)
@@ -104,7 +100,7 @@ class Database {
 	/**
 	 * Start transaction
 	 */
-	public function beginBatch($type = BatchTypeEnum::LOGGED) {
+	public function beginBatch($type = Request\Batch::TYPE_LOGGED) {
 		if (!isset($this->_batchType)) {
 			$this->_batchType = $type;
 			$this->_batchQueryArray = [];
@@ -114,15 +110,15 @@ class Database {
 	/**
 	 * Exec transaction
 	 */
-	public function applyBatch($consistency = ConsistencyEnum::CONSISTENCY_QUORUM, $serialConsistency = null) {
+	public function applyBatch($consistency = Protocol::CONSISTENCY_QUORUM, $serialConsistency = null) {
 		if (!isset($this->_batchType))
 			return false;
 		$body = pack('C', $this->_batchType);
 		$body .= pack('n', count($this->_batchQueryArray)) . implode('', $this->_batchQueryArray);
 
-		$body .= RequestFactory::queryParameters($consistency, $serialConsistency);
+		$body .= Request\Request::queryParameters($consistency, $serialConsistency);
 		// exec
-		$response = $this->connection->sendRequest(RequestFactory::batch($body));
+		$response = $this->connection->sendRequest(new Request\Batch($body));
 		// cleaning
 		$this->_batchType = null;
 		$this->_batchQueryArray = [];
@@ -149,16 +145,16 @@ class Database {
 		else {
 			$preparedData = $this->_getPreparedData($cql);
 			$binary .= pack('n', strlen($preparedData['id'])) . $preparedData['id'];
-			$binary .= RequestFactory::valuesBinary($preparedData, $values);
+			$binary .= Request\Request::valuesBinary($preparedData, $values);
 		}
 		$this->_batchQueryArray[] = $binary;
 	}
 
 	protected function _getPreparedData($cql) {
 		if (!isset($this->_preparedCqls[$cql])) {
-			$response = $this->connection->sendRequest(RequestFactory::prepare($cql));
+			$response = $this->connection->sendRequest(new Request\Prepare($cql));
 			if (!$response instanceof Response\Result) {
-				throw new QueryException($response->getData());
+				throw new Response\Exception($response->getData());
 			}
 			$this->_preparedCqls[$cql] = $response->getData();
 		}
@@ -172,13 +168,13 @@ class Database {
 	 * @param int $consistency
 	 * @param int $serialConsistency
 	 */
-	public function exec($cql, array $values = [], $consistency = ConsistencyEnum::CONSISTENCY_QUORUM, $serialConsistency = null){
+	public function exec($cql, array $values = [], $consistency = Protocol::CONSISTENCY_QUORUM, $serialConsistency = null){
 		if (empty($values)) {
-			$response = $this->connection->sendRequest(RequestFactory::query($cql, $consistency, $serialConsistency));
+			$response = $this->connection->sendRequest(new Request\Query($cql, $consistency, $serialConsistency));
 		} else {
 			$preparedData = $this->_getPreparedData($cql);
 			$response = $this->connection->sendRequest(
-					RequestFactory::execute($preparedData, $values, $consistency, $serialConsistency)
+					new Request\Execute($preparedData, $values, $consistency, $serialConsistency)
 			);
 		}
 		
@@ -193,21 +189,21 @@ class Database {
 	 * @param string $cql
 	 * @param array $values
 	 * @param int $consistency
-	 * @throws Exception\QueryException
+	 * @throws Response\Exception
 	 * @throws Exception\CassandraException
 	 * @return array|null
 	 */
-	public function query($cql, array $values = [], $consistency = ConsistencyEnum::CONSISTENCY_QUORUM, $serialConsistency = null) {
+	public function query($cql, array $values = [], $consistency = Protocol::CONSISTENCY_QUORUM, $serialConsistency = null) {
 		if (isset($this->_batchType) && in_array(strtoupper(substr($cql, 0, 6)), ['INSERT', 'UPDATE', 'DELETE'])) {
 			$this->appendQueryToStack($cql, $values);
 			return true;
 		}
 		if (empty($values)) {
-			$response = $this->connection->sendRequest(RequestFactory::query($cql, $consistency, $serialConsistency));
+			$response = $this->connection->sendRequest(new Request\Query($cql, $consistency, $serialConsistency));
 		} else {
 			$preparedData = $this->_getPreparedData($cql);
 			$response = $this->connection->sendRequest(
-				RequestFactory::execute($preparedData, $values, $consistency, $serialConsistency)
+				new Request\Execute($preparedData, $values, $consistency, $serialConsistency)
 			);
 		}
 
@@ -226,7 +222,7 @@ class Database {
 		$this->keyspace = $keyspace;
 		if ($this->connection->isConnected()) {
 			$response = $this->connection->sendRequest(
-				RequestFactory::query("USE {$this->keyspace};", ConsistencyEnum::CONSISTENCY_QUORUM, null)
+				new Request\Query("USE {$this->keyspace};", Protocol::CONSISTENCY_QUORUM, null)
 			);
 			if ($response instanceof Response\Error)
 				throw new CassandraException($response->getData());

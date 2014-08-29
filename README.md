@@ -52,7 +52,7 @@ $users = $database->query('SELECT * FROM "users" WHERE "id" = :id', ['id' => 'c5
 $users = $database->query(
 	'SELECT * FROM "users" WHERE "id" = :id',
 	['id' => 'c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc'],
-	Cassandra\Enum\ConsistencyEnum::CONSISTENCY_ONE
+	Cassandra\Protocol::CONSISTENCY_ONE
 );
 
 var_dump($users);
@@ -75,8 +75,8 @@ $database->query(
 		'name' => 'userName',
 		'email' => 'user@email.com',
 	),
-	Cassandra\Enum\ConsistencyEnum::CONSISTENCY_ONE,
-	Cassandra\Enum\ConsistencyEnum::CONSISTENCY_LOCAL_SERIAL
+	Cassandra\Protocol::CONSISTENCY_ONE,
+	Cassandra\Protocol::CONSISTENCY_LOCAL_SERIAL
 );
 
 // Keyspace can be changed at runtime
@@ -109,7 +109,7 @@ $urlsFromFacebook = $database->query('SELECT * FROM "urls" WHERE "host" = :host'
 			]
 		);
     //optionally specify the consistency
-	$result = $database->applyBatch(Cassandra\Enum\ConsistencyEnum::CONSISTENCY_QUORUM);
+	$result = $database->applyBatch(Cassandra\Protocol::CONSISTENCY_QUORUM);
 ```
 
 ## Supported datatypes
