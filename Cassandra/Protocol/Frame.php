@@ -24,27 +24,27 @@ class Frame {
 	/**
 	 * @var int
 	 */
-	private $version;
+	protected $version;
 
 	/**
 	 * @var int
 	 */
-	private $opcode;
+	protected $opcode;
 
 	/**
 	 * @var string
 	 */
-	private $body;
+	protected $body;
 
 	/**
 	 * @var int
 	 */
-	private $stream;
+	protected $stream;
 
 	/**
 	 * @var int
 	 */
-	private $flags;
+	protected $flags;
 
 	/**
 	 * @param int $version

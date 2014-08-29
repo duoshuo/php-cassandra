@@ -59,8 +59,7 @@ class Connection {
 	 * @return \Cassandra\Response\DataStream
 	 */
 	public function sendRequest(Request $request) {
-		$frame = new Frame($request->getVersion(), $request->getType(), $request);
-		socket_write($this->connection, $frame);
+		socket_write($this->connection, $request);
 		return $this->getResponse();
 	}
 
