@@ -2,10 +2,11 @@
 namespace Cassandra;
 use Cassandra\Cluster\Node;
 use Cassandra\Enum;
+use Cassandra\Enum\OpcodeEnum;
 use Cassandra\Exception\ConnectionException;
+use Cassandra\Response;
 use Cassandra\Protocol\Frame;
 use Cassandra\Protocol\Request;
-use Cassandra\Protocol\Response;
 
 class Connection {
 
@@ -56,10 +57,10 @@ class Connection {
 
 	/**
 	 * @param Request $request
-	 * @return \Cassandra\Protocol\Response
+	 * @return \Cassandra\Response\DataStream
 	 */
 	public function sendRequest(Request $request) {
-		$frame = new Frame(Enum\VersionEnum::REQUEST, $request->getType(), $request);
+		$frame = new Frame($request->getVersion(), $request->getType(), $request);
 		socket_write($this->connection, $frame);
 		return $this->getResponse();
 	}
@@ -81,6 +82,11 @@ class Connection {
 		return $data;
 	}
 
+	/**
+	 * 
+	 * @throws Response\Exception
+	 * @return \Cassandra\Response\DataStream
+	 */
 	private function getResponse() {
 		$data = $this->fetchData(9);
 		$data = unpack('Cversion/Cflags/nstream/Copcode/Nlength', $data);
@@ -89,8 +95,29 @@ class Connection {
 		} else {
 			$body = '';
 		}
-
-		return new Response($data['opcode'], $body);
+		
+		switch($data['opcode']){
+			case OpcodeEnum::ERROR:
+				return new Response\Error($body);
+		
+			case OpcodeEnum::READY:
+				return new Response\Ready($body);
+		
+			case OpcodeEnum::AUTHENTICATE:
+				return new Response\Authenticate($body);
+		
+			case OpcodeEnum::SUPPORTED:
+				return new Response\Supported($body);
+			
+			case OpcodeEnum::RESULT:
+				return new Response\Result($body);
+		
+			case OpcodeEnum::EVENT:
+				return new Response\Event($body);
+		
+			default:
+				throw new Response\Exception('Unknown response');
+		}
 	}
 
 	/**

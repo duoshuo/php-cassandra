@@ -3,6 +3,8 @@ namespace Cassandra\Protocol;
 
 class Request {
 
+	protected $version = 0x03;
+
 	/**
 	 * @var string
 	 */
@@ -22,6 +24,10 @@ class Request {
 		$this->type = $type;
 	}
 
+	public function getVersion(){
+		return $this->version;
+	}
+	
 	/**
 	 * @return int
 	 */

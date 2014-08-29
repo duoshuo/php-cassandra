@@ -1,5 +1,5 @@
 <?php
-namespace Cassandra\Protocol\Response;
+namespace Cassandra\Response;
 
 use Cassandra\Enum\DataTypeEnum;
 
@@ -8,17 +8,17 @@ class DataStream {
 	/**
 	 * @var string
 	 */
-	private $data;
+	protected $data;
 
 	/**
 	 * @var int
 	 */
-	private $length;
+	protected $length;
 	
 	/**
 	 * @var int
 	 */
-	private $offset = 0;
+	protected $offset = 0;
 
 	/**
 	 * @param string $binary
@@ -272,25 +272,5 @@ class DataStream {
 
 		trigger_error('Unknown type ' . var_export($type, true));
 		return null;
-	}
-	
-	/**
-	 * build a data stream first and read by type
-	 * 
-	 * @param array $type
-	 * @return mixed
-	 */
-	public function readByTypeFromStream(array $type){
-		try {
-			$length = $this->readInt();
-			
-			if ($this->length < $this->offset + $length)
-				return null;
-			
-			$dataStream = new DataStream($this->read($length));
-			return $dataStream->readByType($type);
-		} catch (\Exception $e) {
-			return null;
-		}
 	}
 }
