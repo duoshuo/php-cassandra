@@ -78,7 +78,7 @@ class Database {
 		$responseType = $response->getType();
 		switch($responseType) {
 		case OpcodeEnum::ERROR:
-			throw new ConnectionException($response->getData());
+			throw new ConnectionException($response->getErrorData());
 
 		case OpcodeEnum::AUTHENTICATE:
 			$nodeOptions = $this->connection->getNode()->getOptions();
@@ -89,7 +89,7 @@ class Database {
 				)
 			);
 		}
-		if ($responseType === OpcodeEnum::ERROR) throw new ConnectionException($response->getData());
+		if ($responseType === OpcodeEnum::ERROR) throw new ConnectionException($response->getErrorData());
 		if (!empty($this->keyspace)) $this->setKeyspace($this->keyspace);
 
 		return true;
@@ -132,7 +132,7 @@ class Database {
 
 		//batch return void kind of RESULT, rows kind of RESULT if conditional
 		if ($response->getType() === OpcodeEnum::ERROR)
-			throw new CassandraException($response->getData());
+			throw new CassandraException($response->getErrorData());
 		return $response->getData();
 	}
 
@@ -177,13 +177,18 @@ class Database {
 	 */
 	public function exec($cql, array $values = [], $consistency = ConsistencyEnum::CONSISTENCY_QUORUM, $serialConsistency = null){
 		if (empty($values)) {
-			return $this->connection->sendRequest(RequestFactory::query($cql, $consistency, $serialConsistency));
+			$response = $this->connection->sendRequest(RequestFactory::query($cql, $consistency, $serialConsistency));
 		} else {
 			$preparedData = $this->_getPreparedData($cql);
-			return $this->connection->sendRequest(
+			$response = $this->connection->sendRequest(
 					RequestFactory::execute($preparedData, $values, $consistency, $serialConsistency)
 			);
 		}
+		
+		if ($response->getType() === OpcodeEnum::ERROR)
+			throw new CassandraException($response->getErrorData());
+		
+		return $response;
 	}
 
 	/**
@@ -210,7 +215,7 @@ class Database {
 		}
 
 		if ($response->getType() === OpcodeEnum::ERROR) {
-			throw new CassandraException($response->getData());
+			throw new CassandraException($response->getErrorData());
 		} else {
 			return $response->getData();
 		}
@@ -228,7 +233,7 @@ class Database {
 			$response = $this->connection->sendRequest(
 				RequestFactory::query("USE {$this->keyspace};", ConsistencyEnum::CONSISTENCY_QUORUM, null)
 			);
-			if ($response->getType() === OpcodeEnum::ERROR) throw new CassandraException($response->getData());
+			if ($response->getType() === OpcodeEnum::ERROR) throw new CassandraException($response->getErrorData());
 		}
 	}
 }

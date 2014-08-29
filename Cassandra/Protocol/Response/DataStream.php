@@ -268,4 +268,24 @@ class DataStream {
 		trigger_error('Unknown type ' . var_export($type, true));
 		return null;
 	}
+	
+	/**
+	 * build a data stream first and read by type
+	 * 
+	 * @param array $type
+	 * @return mixed
+	 */
+	public function readByTypeFromStream(array $type){
+		try {
+			$length = $this->readInt();
+			
+			if ($length == 4294967295)
+				return null;
+			
+			$dataStream = new DataStream($this->read($length));
+			return $dataStream->readByType($type);
+		} catch (\Exception $e) {
+			return null;
+		}
+	}
 }

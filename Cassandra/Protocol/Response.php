@@ -7,7 +7,6 @@ use Cassandra\Enum\ResultTypeEnum;
 use Cassandra\Exception\ResponseException;
 use Cassandra\Protocol\Response\DataStream;
 use Cassandra\Protocol\Response\DataStream\TypeReader;
-use Cassandra\Protocol\Response\Rows;
 
 class Response {
 
@@ -174,7 +173,21 @@ class Response {
 				return null;
 
 			case ResultTypeEnum::ROWS:
-				return new Rows($this->dataStream, $this->getColumns());
+				$columns = $this->getColumns();
+				$rowCount = $this->dataStream->readInt();
+				$rows = new \SplFixedArray($rowCount);
+				$rows->columns = $columns;
+				
+				for ($i = 0; $i < $rowCount; ++$i) {
+					$row = new ArrayObject();
+					
+					foreach ($columns as $column)
+						$row[$column['name']] = $this->dataStream->readByTypeFromStream($column['type']);
+					
+					$rows[$i] = $row;
+				}
+				
+				return $rows;
 
 			case ResultTypeEnum::SET_KEYSPACE:
 				return $this->dataStream->readString();
@@ -245,8 +258,7 @@ class Response {
 				throw new ResponseException('Unexpected Response: VOID');
 		
 			case ResultTypeEnum::ROWS:
-				$rows = new Rows($this->dataStream, $this->getColumns());
-				throw new ResponseException('Unexpected Response: ROWS ' . $rows->count());
+				throw new ResponseException('Unexpected Response: ROWS');
 		
 			case ResultTypeEnum::SET_KEYSPACE:
 				throw new ResponseException('Unexpected Response: SET_KEYSPACE ' . $this->dataStream->readString());
@@ -265,38 +277,107 @@ class Response {
 	/**
 	 * 
 	 * @throws ResponseException
-	 * @return \Cassandra\Protocol\Response\Rows
+	 * @return \SplFixedArray
 	 */
-	public function fetchAll(){
+	public function fetchAll($rowClass = 'ArrayObject'){
 		$kind = $this->dataStream->readInt();
 		
-		if ($kind !== ResultTypeEnum::ROWS && $kind !== ResultTypeEnum::VOID){
+		if ($kind !== ResultTypeEnum::ROWS){
 			$this->_throwException($kind);
 		}
 		
-		return new Rows($this->dataStream, $this->getColumns());
+		$columns = $this->getColumns();
+		$rowCount = $this->dataStream->readInt();
+		$rows = new \SplFixedArray($rowCount);
+		$rows->columns = $columns;
+		
+		for ($i = 0; $i < $rowCount; ++$i) {
+			$row = new $rowClass();
+				
+			foreach ($columns as $column)
+				$row[$column['name']] = $this->dataStream->readByTypeFromStream($column['type']);
+			
+			$rows[$i] = $row;
+		}
+		
+		return $rows;
+	}
+	
+	/**
+	 *
+	 * @throws ResponseException
+	 * @return \SplFixedArray
+	 */
+	public function fetchCol($index = 0){
+		$kind = $this->dataStream->readInt();
+	
+		if ($kind !== ResultTypeEnum::ROWS){
+			$this->_throwException($kind);
+		}
+		
+		$columns = $this->getColumns();
+		$columnCount = count($columns);
+		$rowCount = $this->dataStream->readInt();
+		
+		$array = new \SplFixedArray($rowCount);
+		
+		for($i = 0; $i < $rowCount; ++$i){
+			for($j = 0; $j < $columnCount; ++$j){
+				$value = $this->dataStream->readByTypeFromStream($columns[$j]['type']);
+				
+				if ($j == $index)
+					$array[$i] = $row;
+			}
+		}
+		
+		return $array;
 	}
 	
 	/**
 	 * 
+	 * @throws ResponseException
 	 * @return \ArrayObject
 	 */
-	public function fetchRow(){
-		$rows = $this->fetchAll();
+	public function fetchRow($rowClass = 'ArrayObject'){
+		$kind = $this->dataStream->readInt();
 		
-		return isset($rows[0]) ? $rows[0] : null;
+		if ($kind !== ResultTypeEnum::ROWS){
+			$this->_throwException($kind);
+		}
+		
+		$columns = $this->getColumns();
+		$rowCount = $this->dataStream->readInt();
+		
+		if ($rowCount === 0)
+			return null;
+		
+		$row = new $rowClass();
+		foreach ($columns as $column)
+			$row[$column['name']] = $this->dataStream->readByTypeFromStream($column['type']);
+		
+		return $row;
 	}
 	
 	/**
 	 * 
+	 * @throws ResponseException
 	 * @return mixed
 	 */
 	public function fetchOne(){
-		$rows = $this->fetchAll();
-			
-		foreach($rows as $row)
-			foreach($row as $value)
-				return $value;
+		$kind = $this->dataStream->readInt();
+		
+		if ($kind !== ResultTypeEnum::ROWS){
+			$this->_throwException($kind);
+		}
+		
+		$columns = $this->getColumns();
+		$rowCount = $this->dataStream->readInt();
+		
+		if ($rowCount === 0)
+			return null;
+		
+		foreach ($columns as $column)
+			return $this->dataStream->readByTypeFromStream($column['type']); 
 		
 		return null;
 	}
