@@ -14,6 +14,11 @@ class DataStream {
 	 * @var int
 	 */
 	private $length;
+	
+	/**
+	 * @var int
+	 */
+	private $offset = 0;
 
 	/**
 	 * @param string $binary
@@ -32,12 +37,12 @@ class DataStream {
 	 * @return string
 	 */
 	protected function read($length) {
-		if ($this->length < $length) {
+		if ($this->length < $this->offset + $length) {
 			throw new \Exception('Reading while at end of stream');
 		}
-		$output = substr($this->data, 0, $length);
-		$this->data = substr($this->data, $length);
-		$this->length -= $length;
+		
+		$output = substr($this->data, $this->offset, $length);
+		$this->offset += $length;
 		return $output;
 	}
 
@@ -279,7 +284,7 @@ class DataStream {
 		try {
 			$length = $this->readInt();
 			
-			if ($length == 4294967295)
+			if ($this->length < $this->offset + $length)
 				return null;
 			
 			$dataStream = new DataStream($this->read($length));
