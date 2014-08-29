@@ -2,7 +2,6 @@
 namespace Cassandra;
 use Cassandra\Cluster\Node;
 use Cassandra\Enum;
-use Cassandra\Enum\OpcodeEnum;
 use Cassandra\Exception\ConnectionException;
 use Cassandra\Response;
 use Cassandra\Protocol\Frame;
@@ -97,22 +96,22 @@ class Connection {
 		}
 		
 		switch($data['opcode']){
-			case OpcodeEnum::ERROR:
+			case Frame::OPCODE_ERROR:
 				return new Response\Error($body);
 		
-			case OpcodeEnum::READY:
+			case Frame::OPCODE_READY:
 				return new Response\Ready($body);
 		
-			case OpcodeEnum::AUTHENTICATE:
+			case Frame::OPCODE_AUTHENTICATE:
 				return new Response\Authenticate($body);
 		
-			case OpcodeEnum::SUPPORTED:
+			case Frame::OPCODE_SUPPORTED:
 				return new Response\Supported($body);
 			
-			case OpcodeEnum::RESULT:
+			case Frame::OPCODE_RESULT:
 				return new Response\Result($body);
 		
-			case OpcodeEnum::EVENT:
+			case Frame::OPCODE_EVENT:
 				return new Response\Event($body);
 		
 			default:

@@ -1,7 +1,6 @@
 <?php
 namespace Cassandra;
 use Cassandra\Enum\ConsistencyEnum;
-use Cassandra\Enum\OpcodeEnum;
 use Cassandra\Enum\BatchTypeEnum;
 use Cassandra\Exception\CassandraException;
 use Cassandra\Exception\ConnectionException;

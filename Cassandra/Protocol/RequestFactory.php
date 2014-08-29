@@ -1,6 +1,6 @@
 <?php
 namespace Cassandra\Protocol;
-use Cassandra\Enum\OpcodeEnum;
+use Cassandra\Protocol\Frame;
 use Cassandra\Enum\QueryFlagsEnum;
 
 final class RequestFactory {
@@ -34,7 +34,7 @@ final class RequestFactory {
 			$body .= pack('n', strlen($value)) . $value;
 		}
 
-		return new Request(OpcodeEnum::STARTUP, $body);
+		return new Request(Frame::OPCODE_STARTUP, $body);
 	}
 
 	/**
@@ -63,7 +63,7 @@ final class RequestFactory {
 		$body .= pack('n', 8) . 'password';
 		$body .= pack('n', strlen($password)) . $password;
 
-		return new Request(OpcodeEnum::CREDENTIALS, $body);
+		return new Request(Frame::OPCODE_CREDENTIALS, $body);
 	}
 
 	/**
@@ -74,7 +74,7 @@ final class RequestFactory {
 	 * message.
 	 */
 	public function options() {
-		return new Request(OpcodeEnum::OPTIONS);
+		return new Request(Frame::OPCODE_OPTIONS);
 	}
 
 	/**
@@ -96,7 +96,7 @@ final class RequestFactory {
 	public static function query($cql, $consistency, $serialConsistency) {
 		$body = pack('N', strlen($cql)) . $cql;
 		$body .= self::queryParameters($consistency, $serialConsistency);
-		return new Request(OpcodeEnum::QUERY, $body);
+		return new Request(Frame::OPCODE_QUERY, $body);
 	}
 
 	/**
@@ -113,7 +113,7 @@ final class RequestFactory {
 	 */
 	public static function prepare($cql) {
 		$body = pack('N', strlen($cql)) . $cql;
-		return new Request(OpcodeEnum::PREPARE, $body);
+		return new Request(Frame::OPCODE_PREPARE, $body);
 	}
 
 	/**
@@ -142,7 +142,7 @@ final class RequestFactory {
 
 		$body .= self::queryParameters($consistency, $serialConsistency, $prepareData, $values);
 
-		return new Request(OpcodeEnum::EXECUTE, $body);
+		return new Request(Frame::OPCODE_EXECUTE, $body);
 	}
 
 	/**
@@ -167,7 +167,7 @@ final class RequestFactory {
 	}
 
 	public static function batch($body) {
-		return new Request(OpcodeEnum::BATCH, $body);
+		return new Request(Frame::OPCODE_BATCH, $body);
 	}
 
 	public static function valuesBinary(array $prepareData, array $values) {

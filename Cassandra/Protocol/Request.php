@@ -16,7 +16,7 @@ class Request {
 	private $type;
 
 	/**
-	 * @param int $type OpcodeEnum::* constants
+	 * @param int $type Frame::* constants
 	 * @param string $binary
 	 */
 	public function __construct($type, $binary = '') {
