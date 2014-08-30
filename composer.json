@@ -5,6 +5,10 @@
 	"license": "MIT",
 	"authors": [
 		{
+			"name": "Shen Zhenyu",
+			"email": "zhenyupku@gmail.com"
+		},
+		{
 			"name": "Evseev Nikolay",
 			"email": "evseevnn@gmail.com"
 		}

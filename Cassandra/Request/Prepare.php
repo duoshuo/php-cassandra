@@ -6,7 +6,7 @@ class Prepare extends Request{
 
 	public function __construct($cql) {
 		$body = pack('N', strlen($cql)) . $cql;
-		parent::__construct(Frame::OPCODE_BATCH, $body);
+		parent::__construct(Frame::OPCODE_PREPARE, $body);
 	}
 	
 }
