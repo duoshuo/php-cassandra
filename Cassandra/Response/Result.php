@@ -9,6 +9,10 @@ class Result extends DataStream{
 	const PREPARED = 0x0004;
 	const SCHEMA_CHANGE = 0x0005;
 	
+	const ROWS_FLAG_GLOBAL_TABLES_SPEC = 0x0001;
+	const ROWS_FLAG_HAS_MORE_PAGES = 0x0002;
+	const ROWS_FLAG_NO_METADATA = 0x0004;
+	
 	/**
 	 * build a data stream first and read by type
 	 *
@@ -17,13 +21,71 @@ class Result extends DataStream{
 	 */
 	public function readByTypeFromStream(array $type){
 		try {
-			$length = $this->readInt();
-				
+			$length = unpack('N', substr($this->data, $this->offset, 4))[1];
+			$this->offset += 4;
+			
 			if ($this->length < $this->offset + $length)
 				return null;
 			
-			$dataStream = new DataStream($this->read($length));
-			return $dataStream->readByType($type);
+			// do not use $this->read() for performance
+			$data = substr($this->data, $this->offset, $length);
+			$this->offset += $length;
+			
+			switch ($type['type']) {
+				case DataTypeEnum::ASCII:
+				case DataTypeEnum::VARCHAR:
+				case DataTypeEnum::TEXT:
+					return $data;
+				case DataTypeEnum::BIGINT:
+				case DataTypeEnum::COUNTER:
+				case DataTypeEnum::VARINT:
+					$unpacked = unpack('N2', $data);
+					return $unpacked[1] << 32 | $unpacked[2];
+				case DataTypeEnum::CUSTOM:
+				case DataTypeEnum::BLOB:
+					$length = unpack('N', substr($data, 0, 4))[1];
+					if ($length == 4294967295 || $length + 4 > strlen($data))
+						return null;
+					return substr($data, 4, $length);
+				case DataTypeEnum::BOOLEAN:
+					return (bool) unpack('C', $data)[1];
+				case DataTypeEnum::DECIMAL:
+					$unpacked = unpack('N3', $data);
+					$value = $unpacked[2] << 32 | $unpacked[3];
+					$len = strlen($value);
+					return substr($value, 0, $len - $unpacked[1]) . '.' . substr($value, $len - $unpacked[1]);
+				case DataTypeEnum::DOUBLE:
+					return unpack('d', strrev($data))[1];
+				case DataTypeEnum::FLOAT:
+					return unpack('f', strrev($data))[1];
+				case DataTypeEnum::INT:
+					return unpack('N', $data)[1];
+				case DataTypeEnum::TIMESTAMP:
+					$unpacked = unpack('N2', $data);
+					return round($unpacked[1] * 4294967.296 + ($unpacked[2] / 1000));
+				case DataTypeEnum::UUID:
+				case DataTypeEnum::TIMEUUID:
+					$uuid = '';
+					for ($i = 0; $i < 16; ++$i) {
+						if ($i == 4 || $i == 6 || $i == 8 || $i == 10) {
+							$uuid .= '-';
+						}
+						$uuid .= str_pad(dechex(ord($data{$i})), 2, '0', STR_PAD_LEFT);
+					}
+					return $uuid;
+				case DataTypeEnum::INET:
+					return inet_ntop($data);
+				case DataTypeEnum::COLLECTION_LIST:
+				case DataTypeEnum::COLLECTION_SET:
+					$dataStream = new DataStream($data);
+					return $dataStream->readList($type['value']);
+				case DataTypeEnum::COLLECTION_MAP:
+					$dataStream = new DataStream($data);
+					return $dataStream->readMap($type['key'], $type['value']);
+				default:
+					trigger_error('Unknown type ' . var_export($type, true));
+					return null;
+			}
 		} catch (\Exception $e) {
 			return null;
 		}
@@ -80,11 +142,11 @@ class Result extends DataStream{
 	 */
 	protected function readType(){
 		$data = [
-			'type' => parent::readShort()
+			'type' => unpack('n', $this->read(2))[1]
 		];
 		switch ($data['type']) {
 			case DataTypeEnum::CUSTOM:
-				$data['name'] = parent::readString();
+				$data['name'] = $this->read(unpack('n', $this->read(2))[1]);
 				break;
 			case DataTypeEnum::COLLECTION_LIST:
 			case DataTypeEnum::COLLECTION_SET:
@@ -104,33 +166,36 @@ class Result extends DataStream{
 	 * @return array
 	 */
 	private function getColumns() {
-		$flags = parent::readInt();
-		$columnCount = parent::readInt();
-		$globalTableSpec = $flags & 0x0001;
-		if ($globalTableSpec) {
-			$keyspace = parent::readString();
-			$tableName = parent::readString();
-		}
-	
-		$columns = [];
-		for ($i = 0; $i < $columnCount; ++$i) {
-			if (isset($keyspace, $tableName)) {
+		$unpacked = unpack('N2', $this->read(8));
+		$flags = $unpacked[1];
+		$columnCount = $unpacked[2];
+		
+		if ($flags & self::ROWS_FLAG_GLOBAL_TABLES_SPEC) {
+			$keyspace = $this->read(unpack('n', $this->read(2))[1]);
+			$tableName = $this->read(unpack('n', $this->read(2))[1]);
+			
+			$columns = [];
+			for ($i = 0; $i < $columnCount; ++$i) {
 				$columnData = [
-				'keyspace' => $keyspace,
-				'tableName' => $tableName,
-				'name' => parent::readString(),
-				'type' => self::readType()
+					'keyspace' => $keyspace,
+					'tableName' => $tableName,
+					'name' => $this->read(unpack('n', $this->read(2))[1]),
+					'type' => self::readType()
 				];
-			} else {
-				$columnData = [
-				'keyspace' => parent::readString(),
-				'tableName' => parent::readString(),
-				'name' => parent::readString(),
-				'type' => self::readType()
-				];
+				$columns[] = $columnData;
 			}
-	
-			$columns[] = $columnData;
+		}
+		else {
+			$columns = [];
+			for ($i = 0; $i < $columnCount; ++$i) {
+				$columnData = [
+					'keyspace' => $this->read(unpack('n', $this->read(2))[1]),
+					'tableName' => $this->read(unpack('n', $this->read(2))[1]),
+					'name' => $this->read(unpack('n', $this->read(2))[1]),
+					'type' => self::readType()
+				];
+				$columns[] = $columnData;
+			}
 		}
 	
 		return $columns;

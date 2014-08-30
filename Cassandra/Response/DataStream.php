@@ -33,17 +33,21 @@ class DataStream {
 	 * Read data from stream.
 	 *
 	 * @param int $length
-	 * @throws \Exception
 	 * @return string
 	 */
 	protected function read($length) {
-		if ($this->length < $this->offset + $length) {
-			throw new \Exception('Reading while at end of stream');
-		}
+		// This functions are used in everywhere, performance is every important. 
+		//if ($this->length < $this->offset + $length) {
+		//	throw new \Exception('Reading while at end of stream');
+		//}
 		
 		$output = substr($this->data, $this->offset, $length);
 		$this->offset += $length;
 		return $output;
+	}
+	
+	public function reset(){
+		$this->offset = 0;
 	}
 
 	/**
@@ -79,7 +83,7 @@ class DataStream {
 	 * @return string
 	 */
 	public function readString() {
-		$length = $this->readShort();
+		$length = unpack('n', $this->read(2))[1];
 		return $this->read($length);
 	}
 
@@ -89,7 +93,7 @@ class DataStream {
 	 * @return string
 	 */
 	public function readLongString() {
-		$length = $this->readInt();
+		$length = unpack('N', $this->read(4))[1];
 		return $this->read($length);
 	}
 
@@ -99,7 +103,7 @@ class DataStream {
 	 * @return string
 	 */
 	public function readBytes() {
-		$length = $this->readInt();
+		$length = unpack('N', $this->read(4))[1];
 		if ($length == 4294967295)
 			return null;
 		return $this->read($length);
