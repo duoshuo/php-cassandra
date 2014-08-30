@@ -16,7 +16,7 @@ class Request extends Frame{
 	}
 	
 	public static function valuesBinary(array $prepareData, array $values) {
-		$valuesBinary = pack('n', count($values));
+		$valuesBinary = pack('n', count($prepareData['columns']));
 		// column names in lower case in metadata
 		$values = array_change_key_case($values);
 
