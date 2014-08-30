@@ -1,7 +1,7 @@
 <?php
 namespace Cassandra\Request;
 use Cassandra\Protocol\Frame;
-use Cassandra\Protocol\BinaryConverter;
+use Cassandra\Protocol\DataType;
 
 class Request extends Frame{
 	
@@ -28,7 +28,7 @@ class Request extends Frame{
 			} else {
 				$value = null;
 			}
-			$binary = BinaryConverter::getBinary($column['type'], $value);
+			$binary = DataType::getBinary($column['type'], $value);
 			$valuesBinary .= pack('N', strlen($binary)) . $binary;
 		}
 		return $valuesBinary;
