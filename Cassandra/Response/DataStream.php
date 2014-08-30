@@ -1,7 +1,7 @@
 <?php
 namespace Cassandra\Response;
 
-use Cassandra\Enum\DataTypeEnum;
+use Cassandra\Protocol\DataType;
 
 class DataStream {
 
@@ -238,39 +238,39 @@ class DataStream {
 	 */
 	public function readByType(array $type, $isCollectionElement = false) {
 		switch ($type['type']) {
-			case DataTypeEnum::ASCII:
-			case DataTypeEnum::VARCHAR:
-			case DataTypeEnum::TEXT:
+			case DataType::ASCII:
+			case DataType::VARCHAR:
+			case DataType::TEXT:
 				return $isCollectionElement ? $this->readString() : $this->data;
-			case DataTypeEnum::BIGINT:
-			case DataTypeEnum::COUNTER:
-			case DataTypeEnum::VARINT:
+			case DataType::BIGINT:
+			case DataType::COUNTER:
+			case DataType::VARINT:
 				return $this->readVarint();
-			case DataTypeEnum::CUSTOM:
-			case DataTypeEnum::BLOB:
+			case DataType::CUSTOM:
+			case DataType::BLOB:
 				return $this->readBytes();
-			case DataTypeEnum::BOOLEAN:
+			case DataType::BOOLEAN:
 				return $this->readBoolean();
-			case DataTypeEnum::DECIMAL:
+			case DataType::DECIMAL:
 				return $this->readDecimal();
-			case DataTypeEnum::DOUBLE:
+			case DataType::DOUBLE:
 				return $this->readDouble();
-			case DataTypeEnum::FLOAT:
+			case DataType::FLOAT:
 				return $this->readFloat();
-			case DataTypeEnum::INT:
+			case DataType::INT:
 				return $this->readInt();
-			case DataTypeEnum::TIMESTAMP:
+			case DataType::TIMESTAMP:
 				return $this->readTimestamp();
-			case DataTypeEnum::UUID:
+			case DataType::UUID:
 				return $this->readUuid();
-			case DataTypeEnum::TIMEUUID:
+			case DataType::TIMEUUID:
 				return $this->readUuid();
-			case DataTypeEnum::INET:
+			case DataType::INET:
 				return $this->readInet();
-			case DataTypeEnum::COLLECTION_LIST:
-			case DataTypeEnum::COLLECTION_SET:
+			case DataType::COLLECTION_LIST:
+			case DataType::COLLECTION_SET:
 				return $this->readList($type['value']);
-			case DataTypeEnum::COLLECTION_MAP:
+			case DataType::COLLECTION_MAP:
 				return $this->readMap($type['key'], $type['value']);
 		}
 

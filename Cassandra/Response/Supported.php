@@ -1,6 +1,6 @@
 <?php
 namespace Cassandra\Response;
-use Cassandra\Enum\DataTypeEnum;
+use Cassandra\Protocol\DataType;
 
 class Supported extends DataStream {
 	public function getData(){
@@ -12,6 +12,6 @@ class Supported extends DataStream {
 		 * The body of a SUPPORTED message is a [string multimap]. This multimap gives
 		 * for each of the supported STARTUP options, the list of supported values.
 		 */
-		return parent::readByType(['type' => DataTypeEnum::COLLECTION_MAP]);
+		return parent::readByType(['type' => DataType::COLLECTION_MAP]);
 	}
 }

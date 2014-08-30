@@ -1,6 +1,6 @@
 <?php 
 namespace Cassandra\Response;
-use Cassandra\Enum\DataTypeEnum;
+use Cassandra\Protocol\DataType;
 
 class Result extends DataStream{
 	const VOID = 0x0001;
@@ -31,39 +31,39 @@ class Result extends DataStream{
 		$this->offset += $length;
 		
 		switch ($type['type']) {
-			case DataTypeEnum::ASCII:
-			case DataTypeEnum::VARCHAR:
-			case DataTypeEnum::TEXT:
+			case DataType::ASCII:
+			case DataType::VARCHAR:
+			case DataType::TEXT:
 				return $data;
-			case DataTypeEnum::BIGINT:
-			case DataTypeEnum::COUNTER:
-			case DataTypeEnum::VARINT:
+			case DataType::BIGINT:
+			case DataType::COUNTER:
+			case DataType::VARINT:
 				$unpacked = unpack('N2', $data);
 				return $unpacked[1] << 32 | $unpacked[2];
-			case DataTypeEnum::CUSTOM:
-			case DataTypeEnum::BLOB:
+			case DataType::CUSTOM:
+			case DataType::BLOB:
 				$length = unpack('N', substr($data, 0, 4))[1];
 				if ($length == 4294967295 || $length + 4 > strlen($data))
 					return null;
 				return substr($data, 4, $length);
-			case DataTypeEnum::BOOLEAN:
+			case DataType::BOOLEAN:
 				return (bool) unpack('C', $data)[1];
-			case DataTypeEnum::DECIMAL:
+			case DataType::DECIMAL:
 				$unpacked = unpack('N3', $data);
 				$value = $unpacked[2] << 32 | $unpacked[3];
 				$len = strlen($value);
 				return substr($value, 0, $len - $unpacked[1]) . '.' . substr($value, $len - $unpacked[1]);
-			case DataTypeEnum::DOUBLE:
+			case DataType::DOUBLE:
 				return unpack('d', strrev($data))[1];
-			case DataTypeEnum::FLOAT:
+			case DataType::FLOAT:
 				return unpack('f', strrev($data))[1];
-			case DataTypeEnum::INT:
+			case DataType::INT:
 				return unpack('N', $data)[1];
-			case DataTypeEnum::TIMESTAMP:
+			case DataType::TIMESTAMP:
 				$unpacked = unpack('N2', $data);
 				return round($unpacked[1] * 4294967.296 + ($unpacked[2] / 1000));
-			case DataTypeEnum::UUID:
-			case DataTypeEnum::TIMEUUID:
+			case DataType::UUID:
+			case DataType::TIMEUUID:
 				$uuid = '';
 				for ($i = 0; $i < 16; ++$i) {
 					if ($i == 4 || $i == 6 || $i == 8 || $i == 10) {
@@ -72,13 +72,13 @@ class Result extends DataStream{
 					$uuid .= str_pad(dechex(ord($data{$i})), 2, '0', STR_PAD_LEFT);
 				}
 				return $uuid;
-			case DataTypeEnum::INET:
+			case DataType::INET:
 				return inet_ntop($data);
-			case DataTypeEnum::COLLECTION_LIST:
-			case DataTypeEnum::COLLECTION_SET:
+			case DataType::COLLECTION_LIST:
+			case DataType::COLLECTION_SET:
 				$dataStream = new DataStream($data);
 				return $dataStream->readList($type['value']);
-			case DataTypeEnum::COLLECTION_MAP:
+			case DataType::COLLECTION_MAP:
 				$dataStream = new DataStream($data);
 				return $dataStream->readMap($type['key'], $type['value']);
 			default:
@@ -141,14 +141,14 @@ class Result extends DataStream{
 			'type' => unpack('n', $this->read(2))[1]
 		];
 		switch ($data['type']) {
-			case DataTypeEnum::CUSTOM:
+			case DataType::CUSTOM:
 				$data['name'] = $this->read(unpack('n', $this->read(2))[1]);
 				break;
-			case DataTypeEnum::COLLECTION_LIST:
-			case DataTypeEnum::COLLECTION_SET:
+			case DataType::COLLECTION_LIST:
+			case DataType::COLLECTION_SET:
 				$data['value'] = self::readType();
 				break;
-			case DataTypeEnum::COLLECTION_MAP:
+			case DataType::COLLECTION_MAP:
 				$data['key'] = self::readType();
 				$data['value'] = self::readType();
 				break;
