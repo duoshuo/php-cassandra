@@ -1,6 +1,7 @@
 <?php
 namespace Cassandra\Request;
 use Cassandra\Protocol\Frame;
+use Cassandra\Protocol\BinaryData;
 
 class Request extends Frame{
 	
