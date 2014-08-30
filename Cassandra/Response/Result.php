@@ -13,6 +13,8 @@ class Result extends DataStream{
 	const ROWS_FLAG_HAS_MORE_PAGES = 0x0002;
 	const ROWS_FLAG_NO_METADATA = 0x0004;
 	
+	protected $_kind;
+	
 	/**
 	 * build a data stream first and read by type
 	 *
@@ -88,11 +90,11 @@ class Result extends DataStream{
 	}
 	
 	/**
-	 * @return Rows|string|array|null
+	 * @return \SplFixedArray|string|array|null
 	 */
 	public function getData() {
-		$kind = parent::readInt();
-		switch($kind) {
+		$this->offset = 4;
+		switch($this->getKind()) {
 			case self::VOID:
 				return null;
 	
@@ -103,7 +105,7 @@ class Result extends DataStream{
 				$rows->columns = $columns;
 	
 				for ($i = 0; $i < $rowCount; ++$i) {
-					$row = new ArrayObject();
+					$row = new \ArrayObject();
 						
 					foreach ($columns as $column)
 						$row[$column['name']] = self::readByTypeFromStream($column['type']);
@@ -156,6 +158,13 @@ class Result extends DataStream{
 		}
 		return $data;
 	}
+
+	public function getKind(){
+		if ($this->_kind === null)
+			$this->_kind = unpack('N', substr($this->data, 0, 4))[1];
+	
+		return $this->_kind;
+	}
 	
 	/**
 	 * Return metadata
@@ -199,44 +208,14 @@ class Result extends DataStream{
 	
 	/**
 	 *
-	 * @param int $kind
-	 * @throws Exception
-	 * @return NULL
-	 */
-	protected function _throwException($kind){
-		switch($kind){
-			case self::VOID:
-				throw new Exception('Unexpected Response: VOID');
-	
-			case self::ROWS:
-				throw new Exception('Unexpected Response: ROWS');
-	
-			case self::SET_KEYSPACE:
-				throw new Exception('Unexpected Response: SET_KEYSPACE ' . parent::readString());
-	
-			case self::PREPARED:
-				throw new Exception('Unexpected Response: PREPARED id:' . parent::readString() . ' columns:' . $this->getColumns());
-	
-			case self::SCHEMA_CHANGE:
-				throw new Exception('Unexpected Response: SCHEMA_CHANGE change:' . parent::readString() . ' keyspace:' . parent::readString() . ' table:' . parent::readString());
-	
-			default:
-				throw new Exception('Unexpected Response: ' . $kind);
-		}
-	}
-	
-	/**
-	 *
 	 * @throws Exception
 	 * @return \SplFixedArray
 	 */
 	public function fetchAll($rowClass = 'ArrayObject'){
-		$kind = parent::readInt();
-	
-		if ($kind !== self::ROWS){
-			$this->_throwException($kind);
+		if ($this->getKind() !== self::ROWS){
+			throw new Exception('Unexpected Response: ' . $this->getKind());
 		}
-	
+		$this->offset = 4;
 		$columns = $this->getColumns();
 		$rowCount = parent::readInt();
 		$rows = new \SplFixedArray($rowCount);
@@ -260,12 +239,10 @@ class Result extends DataStream{
 	 * @return \SplFixedArray
 	 */
 	public function fetchCol($index = 0){
-		$kind = parent::readInt();
-	
-		if ($kind !== self::ROWS){
-			$this->_throwException($kind);
+		if ($this->getKind() !== self::ROWS){
+			throw new Exception('Unexpected Response: ' . $this->getKind());
 		}
-	
+		$this->offset = 4;
 		$columns = $this->getColumns();
 		$columnCount = count($columns);
 		$rowCount = parent::readInt();
@@ -290,12 +267,10 @@ class Result extends DataStream{
 	 * @return \ArrayObject
 	 */
 	public function fetchRow($rowClass = 'ArrayObject'){
-		$kind = parent::readInt();
-	
-		if ($kind !== self::ROWS){
-			$this->_throwException($kind);
+		if ($this->getKind() !== self::ROWS){
+			throw new Exception('Unexpected Response: ' . $this->getKind());
 		}
-	
+		$this->offset = 4;
 		$columns = $this->getColumns();
 		$rowCount = parent::readInt();
 	
@@ -315,12 +290,10 @@ class Result extends DataStream{
 	 * @return mixed
 	 */
 	public function fetchOne(){
-		$kind = parent::readInt();
-	
-		if ($kind !== self::ROWS){
-			$this->_throwException($kind);
+		if ($this->getKind() !== self::ROWS){
+			throw new Exception('Unexpected Response: ' . $this->getKind());
 		}
-	
+		$this->offset = 4;
 		$columns = $this->getColumns();
 		$rowCount = parent::readInt();
 	
