@@ -1,7 +1,6 @@
 <?php
 namespace Cassandra;
 use Cassandra\Cluster\Node;
-use Cassandra\Exception\ClusterException;
 
 class Cluster {
 
@@ -26,10 +25,10 @@ class Cluster {
 
 	/**
 	 * @return Node
-	 * @throws Exception\ClusterException
+	 * @throws Cluster\Exception
 	 */
 	public function getRandomNode() {
-		if (empty($this->nodes)) throw new ClusterException('Node list is empty.');
+		if (empty($this->nodes)) throw new Cluster\Exception('Node list is empty.');
 		$nodeKey = array_rand($this->nodes);
 		$node = $this->nodes[$nodeKey];
 		try {

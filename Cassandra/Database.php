@@ -1,6 +1,5 @@
 <?php
 namespace Cassandra;
-use Cassandra\Exception\CassandraException;
 use Cassandra\Exception\ConnectionException;
 
 class Database {
@@ -60,7 +59,7 @@ class Database {
 	/**
 	 * Connect to database
 	 * @throws Exception\ConnectionException
-	 * @throws Exception\CassandraException
+	 * @throws Exception
 	 * @return bool
 	 */
 	public function connect() {
@@ -125,7 +124,7 @@ class Database {
 
 		//batch return void kind of RESULT, rows kind of RESULT if conditional
 		if ($response instanceof Response\Error)
-			throw new CassandraException($response->getData());
+			throw new Exception($response->getData());
 		return $response->getData();
 	}
 
@@ -179,7 +178,7 @@ class Database {
 		}
 		
 		if ($response instanceof Response\Error)
-			throw new CassandraException($response->getData());
+			throw new Exception($response->getData());
 		
 		return $response;
 	}
@@ -190,7 +189,7 @@ class Database {
 	 * @param array $values
 	 * @param int $consistency
 	 * @throws Response\Exception
-	 * @throws Exception\CassandraException
+	 * @throws Exception
 	 * @return array|null
 	 */
 	public function query($cql, array $values = [], $consistency = Protocol::CONSISTENCY_QUORUM, $serialConsistency = null) {
@@ -208,7 +207,7 @@ class Database {
 		}
 
 		if ($response instanceof Response\Error) {
-			throw new CassandraException($response->getData());
+			throw new Exception($response->getData());
 		}
 		
 		return $response->getData();
@@ -216,7 +215,7 @@ class Database {
 
 	/**
 	 * @param string $keyspace
-	 * @throws Exception\CassandraException
+	 * @throws Exception
 	 */
 	public function setKeyspace($keyspace) {
 		$this->keyspace = $keyspace;
@@ -225,7 +224,7 @@ class Database {
 				new Request\Query("USE {$this->keyspace};", Protocol::CONSISTENCY_QUORUM, null)
 			);
 			if ($response instanceof Response\Error)
-				throw new CassandraException($response->getData());
+				throw new Exception($response->getData());
 		}
 	}
 }
