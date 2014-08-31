@@ -31,7 +31,7 @@ class Batch extends Request{
 	 */
 	protected $_connection;
 
-	public function __construct($type = Batch::TYPE_LOGGED, $consistency = Protocol::CONSISTENCY_QUORUM, $serialConsistency = null) {
+	public function __construct($type = Batch::TYPE_LOGGED, $consistency = Request::CONSISTENCY_QUORUM, $serialConsistency = null) {
 		$this->_batchType = $type;
 		$this->_consistency = $consistency;
 		$this->_serialConsistency = $serialConsistency;

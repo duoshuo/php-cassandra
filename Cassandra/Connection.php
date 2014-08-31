@@ -238,7 +238,7 @@ class Connection {
 	 * @param int $consistency
 	 * @param int $serialConsistency
 	 */
-	public function exec($cql, array $values = [], $consistency = Protocol::CONSISTENCY_QUORUM, $serialConsistency = null){
+	public function exec($cql, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, $serialConsistency = null){
 		if ($this->connection === null)
 			$this->connect();
 		
@@ -266,7 +266,7 @@ class Connection {
 		if ($this->connection === null)
 			return;
 		
-		socket_write($this->connection, new Request\Query("USE {$this->keyspace};", Protocol::CONSISTENCY_QUORUM, null));
+		socket_write($this->connection, new Request\Query("USE {$this->keyspace};", Request\Request::CONSISTENCY_QUORUM, null));
 		
 		$response = $this->getResponse();
 		
