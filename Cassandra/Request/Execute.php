@@ -3,6 +3,9 @@ namespace Cassandra\Request;
 use Cassandra\Protocol\Frame;
 
 class Execute extends Request{
+	
+	protected $opcode = Frame::OPCODE_EXECUTE;
+	
 	/**
 	 * EXECUTE
 	 *
@@ -24,11 +27,18 @@ class Execute extends Request{
 	 * @param int $consistency
 	 */
 	public function __construct(array $prepareData, array $values, $consistency, $serialConsistency) {
-		$body = pack('n', strlen($prepareData['id'])) . $prepareData['id'];
-
-		$body .= Query::queryParameters($consistency, $serialConsistency, $prepareData, $values);
-		
-		parent::__construct(Frame::OPCODE_EXECUTE, $body);
+		$this->_prepareData = $prepareData;
+		$this->_values = $values;
+		 
+		$this->_consistency = $consistency;
+		$this->_serialConsistency = $serialConsistency;
 	}
 	
+	public function getBody(){
+		$body = pack('n', strlen($this->_prepareData['id'])) . $this->_prepareData['id'];
+		
+		$body .= Request::queryParameters($this->_consistency, $this->_serialConsistency, $this->_prepareData, $this->_values);
+		
+		return $body;
+	}
 }

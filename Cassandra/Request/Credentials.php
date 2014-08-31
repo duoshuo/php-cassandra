@@ -3,6 +3,9 @@ namespace Cassandra\Request;
 use Cassandra\Protocol\Frame;
 
 class Credentials extends Request{
+	
+	protected $opcode = Frame::OPCODE_CREDENTIALS;
+	
 	/**
 	 * CREDENTIALS
 	 *
@@ -18,17 +21,22 @@ class Credentials extends Request{
 	 *
 	 * The response to a CREDENTIALS is a READY message (or an ERROR message).
 	 *
-	 * @param string $user
+	 * @param string $username
 	 * @param string $password
 	 */
-	public function __construct($user, $password) {
+	public function __construct($username, $password) {
+		$this->_username = $username;
+		$this->_password = $password;
+	}
+	
+	public function getBody(){
 		$body = pack('n', 2);
 		$body .= pack('n', 8) . 'username';
-		$body .= pack('n', strlen($user)) . $user;
+		$body .= pack('n', strlen($this->_username)) . $this->_username;
 		$body .= pack('n', 8) . 'password';
-		$body .= pack('n', strlen($password)) . $password;
+		$body .= pack('n', strlen($this->_password)) . $this->_password;
 		
-		parent::__construct(Frame::OPCODE_CREDENTIALS, $body);
+		return $body;
 	}
 	
 }

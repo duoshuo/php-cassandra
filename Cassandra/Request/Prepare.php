@@ -4,9 +4,15 @@ use Cassandra\Protocol\Frame;
 
 class Prepare extends Request{
 
+	protected $opcode = Frame::OPCODE_PREPARE;
+	
+	protected $_cql;
+	
 	public function __construct($cql) {
-		$body = pack('N', strlen($cql)) . $cql;
-		parent::__construct(Frame::OPCODE_PREPARE, $body);
+		$this->_cql = $cql;
 	}
 	
+	public function getBody(){
+		return pack('N', strlen($this->_cql)) . $this->_cql;
+	}
 }

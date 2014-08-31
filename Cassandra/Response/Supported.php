@@ -4,6 +4,7 @@ use Cassandra\Protocol\DataType;
 
 class Supported extends DataStream {
 	public function getData(){
+		$this->offset = 0;
 		/**
 		 * TODO Check it!
 		 * Indicates which startup options are supported by the server. This message

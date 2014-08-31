@@ -27,75 +27,71 @@ class Error extends DataStream {
 	 * @return string
 	 */
 	public function getData() {
-		$stream = $this;
-		$error = $stream->readInt();
+		$this->offset = 0;
+		$errorCode = $this->readInt();
 
-		$errorMessages = [
-			self::SERVER_ERROR => function(DataStream $stream) {
-					return "Server error: {$stream->readString()}";
-				},
-			self::PROTOCOL_ERROR => function(DataStream $stream) {
-					return "Protocol error: {$stream->readString()}";
-				},
-			self::BAD_CREDENTIALS => function(DataStream $stream) {
-					return "Bad credentials: {$stream->readString()}";
-				},
-			self::UNAVAILABLE_EXCEPTION => function(DataStream $stream) {
-					$errorData = var_export([
-						'consistency' => $stream->readInt(),
-						'node' => $stream->readInt(),
-						'replica' => $stream->readInt()
+		switch($errorCode){
+			case self::SERVER_ERROR:
+				return "Server error: " . $this->readString();
+
+			case self::PROTOCOL_ERROR:
+				return "Protocol error: " . $this->readString();
+
+			case self::BAD_CREDENTIALS:
+				return "Bad credentials: " . $this->readString();
+
+			case self::UNAVAILABLE_EXCEPTION:
+				return "Unavailable exception. Error data: " . var_export([
+						'consistency' => $this->readInt(),
+						'node' => $this->readInt(),
+						'replica' => $this->readInt()
 					], true);
 
-					return "Unavailable exception. Error data: {$errorData}";
-				},
-			self::OVERLOADED => function(DataStream $stream) {
-					return "Overloaded: {$stream->readString()}";
-				},
-			self::IS_BOOTSTRAPPING => function(DataStream $stream) {
-					return "Is_bootstrapping: {$stream->readString()}";
-				},
-			self::TRUNCATE_ERROR => function(DataStream $stream) {
-					return "Truncate_error: {$stream->readString()}";
-				},
-			self::WRITE_TIMEOUT => function(DataStream $stream) {
-					$errorData = var_export([
-						'consistency' => $stream->readInt(),
-						'node' => $stream->readInt(),
-						'replica' => $stream->readInt(),
-						'writeType' => $stream->readString()
-					], true);
-					return "Write_timeout. Error data: {$errorData}";
-				},
-			self::READ_TIMEOUT => function(DataStream $stream) {
-					$errorData = var_export([
-						'consistency' => $stream->readInt(),
-						'node' => $stream->readInt(),
-						'replica' => $stream->readInt(),
-						'dataPresent' => $stream->readChar()
-					], true);
-					return "Read_timeout. Error data: {$errorData}";
-				},
-			self::SYNTAX_ERROR => function(DataStream $stream) {
-					return "Syntax_error: {$stream->readString()}";
-				},
-			self::UNAUTHORIZED => function(DataStream $stream) {
-					return "Unauthorized: {$stream->readString()}";
-				},
-			self::INVALID => function(DataStream $stream) {
-					return "Invalid: {$stream->readString()}";
-				},
-			self::CONFIG_ERROR => function(DataStream $stream) {
-					return "Config_error: {$stream->readString()}";
-				},
-			self::ALREADY_EXIST => function(DataStream $stream) {
-					return "Already_exists: {$stream->readString()}";
-				},
-			self::UNPREPARED => function(DataStream $stream) {
-					return "Unprepared: {$stream->readShort()}";
-				}
-		];
+			case self::OVERLOADED:
+				return "Overloaded: " . $this->readString();
 
-		return isset($errorMessages[$error]) ? $errorMessages[$error]($stream) : 'Unknown error';
+			case self::IS_BOOTSTRAPPING:
+				return "Is_bootstrapping: " . $this->readString();
+
+			case self::TRUNCATE_ERROR:
+				return "Truncate_error: " . $this->readString();
+
+			case self::WRITE_TIMEOUT:
+				return "Write_timeout. Error data: " . var_export([
+						'consistency' => $this->readInt(),
+						'node' => $this->readInt(),
+						'replica' => $this->readInt(),
+						'writeType' => $this->readString()
+					], true);
+
+			case self::READ_TIMEOUT:
+				return "Read_timeout. Error data: " . var_export([
+						'consistency' => $this->readInt(),
+						'node' => $this->readInt(),
+						'replica' => $this->readInt(),
+						'dataPresent' => $this->readChar()
+					], true);
+
+			case self::SYNTAX_ERROR:
+				return "Syntax_error: " . $this->readString();
+
+			case self::UNAUTHORIZED:
+				return "Unauthorized: " . $this->readString();
+
+			case self::INVALID:
+				return "Invalid: " . $this->readString();
+
+			case self::CONFIG_ERROR:
+				return "Config_error: " . $this->readString();
+
+			case self::ALREADY_EXIST:
+				return "Already_exists: " . $this->readString();
+
+			case self::UNPREPARED:
+				return "Unprepared: " . $this->readShort();
+
+			default:
+				return 'Unknown error';
+		}
 	}
 }

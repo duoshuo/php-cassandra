@@ -3,6 +3,9 @@ namespace Cassandra\Request;
 use Cassandra\Protocol\Frame;
 
 class Options extends Request{
+	
+	protected $opcode = Frame::OPCODE_OPTIONS;
+	
 	/**
 	 * OPTIONS
 	 *
@@ -11,7 +14,5 @@ class Options extends Request{
 	 * message.
 	 */
 	public function __construct() {
-		parent::__construct(Frame::OPCODE_OPTIONS);
 	}
-	
 }

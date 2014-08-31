@@ -1,7 +1,5 @@
 <?php
-namespace Cassandra\Cluster;
-
-use Cassandra\Exception\ConnectionException;
+namespace Cassandra\Connection;
 
 class Node {
 
@@ -58,7 +56,7 @@ class Node {
 		socket_set_option($this->socket, getprotobyname('TCP'), TCP_NODELAY, 1);
 		socket_set_option($this->socket, SOL_SOCKET, SO_RCVTIMEO, ["sec" => self::STREAM_TIMEOUT, "usec" => 0]);
 		if (!socket_connect($this->socket, $this->host, $this->port)) {
-			throw new ConnectionException("Unable to connect to Cassandra node: {$this->host}:{$this->port}");
+			throw new Exception("Unable to connect to Cassandra node: {$this->host}:{$this->port}");
 		}
 
 		return $this->socket;

@@ -3,6 +3,15 @@ namespace Cassandra\Request;
 use Cassandra\Protocol\Frame;
 
 class Startup extends Request{
+	
+	protected $opcode = Frame::OPCODE_STARTUP;
+	
+	/**
+	 * 
+	 * @var array
+	 */
+	protected $_options = [];
+	
 	/**
 	 * STARTUP
 	 *
@@ -22,16 +31,18 @@ class Startup extends Request{
 	 * - "COMPRESSION": the compression algorithm to use for frames (See section 5).
 	 * This is optional, if not specified no compression will be used.
 	 *
-	 * @param array $option
+	 * @param array $options
 	 */
-	public function __construct(array $option = []) {
-		$body = pack('n', count($option));
-		foreach ($option as $name => $value) {
+	public function __construct(array $options = []) {
+		$this->_options = $options;
+	}
+	
+	public function getBody(){
+		$body = pack('n', count($this->_options));
+		foreach ($this->_options as $name => $value) {
 			$body .= pack('n', strlen($name)) . $name;
 			$body .= pack('n', strlen($value)) . $value;
 		}
-		
-		parent::__construct(Frame::OPCODE_STARTUP, $body);
+		return $body;
 	}
-	
 }

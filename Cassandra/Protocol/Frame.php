@@ -1,7 +1,7 @@
 <?php
 namespace Cassandra\Protocol;
 
-class Frame {
+interface Frame {
 
 	const FLAG_COMPRESSION = 0x01;
 	const FLAG_TRACING = 0x02;
@@ -24,57 +24,13 @@ class Frame {
 	const OPCODE_AUTH_RESPONSE = 0x0F;
 	const OPCODE_AUTH_SUCCESS = 0x10;
 	
-	/**
-	 * @var int
-	 */
-	protected $version;
-
-	/**
-	 * @var int
-	 */
-	protected $opcode;
-
-	/**
-	 * @var string
-	 */
-	protected $body;
-
-	/**
-	 * @var int
-	 */
-	protected $stream;
-
-	/**
-	 * @var int
-	 */
-	protected $flags;
-
-	/**
-	 * @param int $version
-	 * @param int $opcode
-	 * @param string $body
-	 * @param int $stream
-	 * @param int $flags
-	 */
-	public function __construct($version, $opcode, $body, $stream = 0, $flags = 0) {
-		$this->version = $version;
-		$this->opcode = $opcode;
-		$this->body = $body;
-		$this->stream = $stream;
-		$this->flags = $flags;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function __toString() {
-		return pack(
-			'CCnCN',
-			$this->version,
-			$this->flags,
-			$this->stream,
-			$this->opcode,
-			strlen($this->body)
-		) . $this->body;
-	}
+	public function getVersion();
+	
+	public function getFlags();
+	
+	public function getStream();
+	
+	public function getOpcode();
+	
+	public function getBody();
 }

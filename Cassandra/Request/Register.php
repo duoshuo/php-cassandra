@@ -3,6 +3,9 @@ namespace Cassandra\Request;
 use Cassandra\Protocol\Frame;
 
 class Register extends Request{
+	
+	protected $opcode = Frame::OPCODE_REGISTER;
+	
 	/**
 	 * REGISTER
 	 *
@@ -21,7 +24,5 @@ class Register extends Request{
 	 * @param array $events
 	 */
 	public function __construct($body) {
-		parent::__construct(Frame::OPCODE_REGISTER, $body);
 	}
-	
 }

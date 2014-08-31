@@ -12,6 +12,14 @@ class Query extends Request{
 	const FLAG_WITH_DEFAULT_TIMESTAMP = 0x20;
 	const FLAG_WITH_NAME_FOR_VALUES = 0x40;
 	
+	protected $opcode = Frame::OPCODE_QUERY;
+	
+	protected $_cql;
+	
+	protected $_consistency;
+	
+	protected $_serialConsistency;
+	
 	/**
 	 * QUERY
 	 *
@@ -28,29 +36,14 @@ class Query extends Request{
 	 * @param int $consistency
 	 */
 	public function __construct($cql, $consistency, $serialConsistency) {
-		$body = pack('N', strlen($cql)) . $cql;
-		$body .= self::queryParameters($consistency, $serialConsistency);
-		parent::__construct(Frame::OPCODE_QUERY, $body);
+		$this->_cql = $cql;
+		$this->_consistency = $consistency;
+		$this->_serialConsistency = $serialConsistency;
 	}
 	
-	public static function queryParameters($consistency, $serialConsistency, array $prepareData = array(), array $values = array()) {
-		$binary = pack('n', $consistency);
-
-		$flags = 0;
-		$remainder = '';
-
-		if (!empty($values)) {
-			$flags |= self::FLAG_VALUES;
-			$remainder .= self::valuesBinary($prepareData, $values);
-		}
-
-		if (isset($serialConsistency)) {
-			$flags |= self::FLAG_WITH_SERIAL_CONSISTENCY;
-			$remainder .= pack('n', $serialConsistency);
-		}
-
-		$binary .= pack('C', $flags) . $remainder;
-
-		return $binary;
+	public function getBody(){
+		$body = pack('N', strlen($this->_cql)) . $this->_cql;
+		$body .= Request::queryParameters($this->_consistency, $this->_serialConsistency);
+		return $body;
 	}
 }
