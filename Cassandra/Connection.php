@@ -36,6 +36,17 @@ class Connection {
 	 * @var resource
 	 */
 	private $connection;
+	
+	/**
+	 * @var int
+	 */
+	protected $_lastStreamId = 0;
+	
+	/**
+	 * 
+	 * @var array
+	 */
+	protected $_statements = array();
 
 	/**
 	 * @param array $nodes
@@ -125,11 +136,29 @@ class Connection {
 	}
 	
 	/**
+	 * 
+	 * @param int $streamId
+	 */
+	public function getResponse($streamId = 0){
+		do{
+			$response = $this->_getResponse();
+			
+			if ($response->stream !== 0){
+				$this->_statements[$response->stream]->setResponse($response);
+				unset($this->_statements[$response->stream]);
+			}
+		}
+		while($response->stream !== $streamId);
+		
+		return $response;
+	}
+	
+	/**
 	 *
 	 * @throws Response\Exception
 	 * @return \Cassandra\Response\DataStream
 	 */
-	private function getResponse() {
+	protected function _getResponse() {
 		$data = $this->fetchData(9);
 		$data = unpack('Cversion/Cflags/nstream/Copcode/Nlength', $data);
 		if ($data['length']) {
@@ -137,29 +166,33 @@ class Connection {
 		} else {
 			$body = '';
 		}
-	
+		
 		switch($data['opcode']){
 			case Frame::OPCODE_ERROR:
-				return new Response\Error($body);
-	
+				$response = new Response\Error($body);
+				break;
 			case Frame::OPCODE_READY:
-				return new Response\Ready($body);
-	
+				$response = new Response\Ready($body);
+				break;
 			case Frame::OPCODE_AUTHENTICATE:
-				return new Response\Authenticate($body);
-	
+				$response = new Response\Authenticate($body);
+				break;
 			case Frame::OPCODE_SUPPORTED:
-				return new Response\Supported($body);
-					
+				$response = new Response\Supported($body);
+				break;
 			case Frame::OPCODE_RESULT:
-				return new Response\Result($body);
-	
+				$response = new Response\Result($body);
+				break;
 			case Frame::OPCODE_EVENT:
-				return new Response\Event($body);
-	
+				$response = new Response\Event($body);
+				break;
 			default:
 				throw new Response\Exception('Unknown response');
 		}
+		
+		$response->stream = $data['stream'];
+		
+		return $response;
 	}
 	
 	/**
@@ -216,6 +249,17 @@ class Connection {
 		return $this->getResponse();
 	}
 	
+	public function asyncRequest(Request\Request $request) {
+		if ($this->connection === null)
+			$this->connect();
+		
+		$streamId = $this->_getNewStreamId();
+		$request->setStream($streamId);
+		socket_write($this->connection, $request);
+		
+		return $this->_statements[$streamId] = new Statement($this, $streamId);
+	}
+	
 	public function prepare($cql) {
 		if (!isset($this->_preparedCqls[$cql])) {
 			if ($this->connection === null)
@@ -237,23 +281,56 @@ class Connection {
 	 * @param array $values
 	 * @param int $consistency
 	 * @param int $serialConsistency
+	 * @return Response\DataStream
 	 */
 	public function exec($cql, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, $serialConsistency = null){
 		if ($this->connection === null)
 			$this->connect();
 		
 		if (empty($values)) {
-			socket_write($this->connection, new Request\Query($cql, $consistency, $serialConsistency));
+			$request = new Request\Query($cql, $consistency, $serialConsistency);
 		} else {
 			$preparedData = $this->prepare($cql);
-			socket_write($this->connection, new Request\Execute($preparedData, $values, $consistency, $serialConsistency));
+			$request = new Request\Execute($preparedData, $values, $consistency, $serialConsistency);
 		}
+		socket_write($this->connection, $request);
 		$response = $this->getResponse();
 		
 		if ($response instanceof Response\Error)
 			throw new Exception($response->getData());
 		
 		return $response;
+	}
+	
+	protected function _getNewStreamId(){
+		return ++$this->_lastStreamId;
+	}
+	
+	/**
+	 * 
+	 * @param string $cql
+	 * @param array $values
+	 * @param int $consistency
+	 * @param int $serialConsistency
+	 * @throws Exception
+	 * @return Statement
+	 */
+	public function execAsync($cql, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, $serialConsistency = null){
+		if ($this->connection === null)
+			$this->connect();
+	
+		if (empty($values)) {
+			$request = new Request\Query($cql, $consistency, $serialConsistency);
+		} else {
+			$preparedData = $this->prepare($cql);
+			$request = new Request\Execute($preparedData, $values, $consistency, $serialConsistency);
+		}
+		
+		$streamId = $this->_getNewStreamId();
+		$request->setStream($streamId);
+		socket_write($this->connection, $request);
+		
+		return $this->_statements[$streamId] = new Statement($this, $streamId);
 	}
 
 	/**

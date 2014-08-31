@@ -68,6 +68,10 @@ class Request implements Frame{
 		return '';
 	}
 	
+	public function setStream($stream){
+		$this->stream = $stream;
+	}
+	
 	/**
 	 * @return string
 	 */
