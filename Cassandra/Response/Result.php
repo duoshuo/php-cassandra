@@ -21,7 +21,7 @@ class Result extends DataStream{
 	 * @param array $type
 	 * @return mixed
 	 */
-	public function readByTypeFromStream(array $type){
+	protected function _readByTypeFromStream(array $type){
 		$length = unpack('N', substr($this->data, $this->offset, 4))[1];
 		$this->offset += 4;
 		
@@ -108,7 +108,7 @@ class Result extends DataStream{
 					$row = new \ArrayObject();
 						
 					foreach ($columns as $column)
-						$row[$column['name']] = self::readByTypeFromStream($column['type']);
+						$row[$column['name']] = $this->_readByTypeFromStream($column['type']);
 						
 					$rows[$i] = $row;
 				}
@@ -225,7 +225,7 @@ class Result extends DataStream{
 			$row = new $rowClass();
 	
 			foreach ($columns as $column)
-				$row[$column['name']] = self::readByTypeFromStream($column['type']);
+				$row[$column['name']] = $this->_readByTypeFromStream($column['type']);
 				
 			$rows[$i] = $row;
 		}
@@ -251,7 +251,7 @@ class Result extends DataStream{
 	
 		for($i = 0; $i < $rowCount; ++$i){
 			for($j = 0; $j < $columnCount; ++$j){
-				$value = self::readByTypeFromStream($columns[$j]['type']);
+				$value = $this->_readByTypeFromStream($columns[$j]['type']);
 	
 				if ($j == $index)
 					$array[$i] = $row;
@@ -279,7 +279,7 @@ class Result extends DataStream{
 	
 		$row = new $rowClass();
 		foreach ($columns as $column)
-			$row[$column['name']] = self::readByTypeFromStream($column['type']);
+			$row[$column['name']] = $this->_readByTypeFromStream($column['type']);
 	
 		return $row;
 	}
@@ -301,7 +301,7 @@ class Result extends DataStream{
 			return null;
 	
 		foreach ($columns as $column)
-			return self::readByTypeFromStream($column['type']);
+			return $this->_readByTypeFromStream($column['type']);
 	
 		return null;
 	}

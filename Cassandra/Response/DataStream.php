@@ -230,6 +230,22 @@ class DataStream {
 		$len = strlen($value);
 		return substr($value, 0, $len - $scale) . '.' . substr($value, $len - $scale);
 	}
+	
+	public function readStringMultimap(){
+		$map = array();
+		$count = $this->readShort();
+		for($i = 0; $i < $count; $i++){
+			$key = $this->readString();
+				
+			$listLength = $this->readShort();
+			$list = array();
+			for($j = 0; $j < $listLength; $j++)
+				$list[] = $this->readString();
+					
+			$map[$key] = $list;
+		}
+		return $map;
+	}
 
 	/**
 	 * @param array $type

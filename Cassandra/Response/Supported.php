@@ -13,6 +13,6 @@ class Supported extends DataStream {
 		 * The body of a SUPPORTED message is a [string multimap]. This multimap gives
 		 * for each of the supported STARTUP options, the list of supported values.
 		 */
-		return parent::readByType(['type' => DataType::COLLECTION_MAP]);
+		return $this->readStringMultimap();
 	}
 }

@@ -1,10 +1,17 @@
 <?php
 namespace Cassandra\Request;
 use Cassandra\Protocol\Frame;
+use Cassandra\Protocol\DataType;
 
 class Register extends Request{
 	
 	protected $opcode = Frame::OPCODE_REGISTER;
+	
+	/**
+	 * 
+	 * @var array
+	 */
+	protected $_events;
 	
 	/**
 	 * REGISTER
@@ -23,6 +30,11 @@ class Register extends Request{
 	 *
 	 * @param array $events
 	 */
-	public function __construct($body) {
+	public function __construct(array $events) {
+		$this->_events = $events;
+	}
+	
+	public function getBody(){
+		return DataType::getList($this->_events, array('type' => DataType::TEXT));
 	}
 }
