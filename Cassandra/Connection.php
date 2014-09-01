@@ -186,6 +186,9 @@ class Connection {
 			case Frame::OPCODE_EVENT:
 				$response = new Response\Event($body);
 				break;
+			case Frame::OPCODE_AUTH_SUCCESS:
+				$response = new Response\AuthSuccess($body);
+				break;
 			default:
 				throw new Response\Exception('Unknown response');
 		}
@@ -223,12 +226,15 @@ class Connection {
 		if ($response instanceof Response\Authenticate){
 			$nodeOptions = $this->node->getOptions();
 			socket_write($this->connection, 
-				new Request\Credentials(
+				new Request\AuthResponse(
 					$nodeOptions['username'],
 					$nodeOptions['password']
 				)
 			);
 			$response = $this->getResponse();
+
+			if ($response instanceof Response\Error)
+				throw new Connection\Exception($response->getData());
 		}
 		
 		if (!empty($this->keyspace))
