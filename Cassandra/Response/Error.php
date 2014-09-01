@@ -1,7 +1,8 @@
 <?php
 namespace Cassandra\Response;
+use Cassandra\Protocol\Frame;
 
-class Error extends DataStream {
+class Error extends Response {
 	const SERVER_ERROR = 0x0000;
 	const PROTOCOL_ERROR = 0x000A;
 	const BAD_CREDENTIALS = 0x0100;

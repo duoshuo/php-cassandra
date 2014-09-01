@@ -1,8 +1,9 @@
 <?php
 namespace Cassandra\Response;
+use Cassandra\Protocol\Frame;
 use Cassandra\Protocol\DataType;
 
-class Supported extends DataStream {
+class Supported extends Response {
 	public function getData(){
 		$this->offset = 0;
 		/**

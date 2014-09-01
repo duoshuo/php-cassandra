@@ -141,17 +141,18 @@ class Connection {
 	/**
 	 * 
 	 * @param int $streamId
+	 * @return Response\Response
 	 */
 	public function getResponse($streamId = 0){
 		do{
 			$response = $this->_getResponse();
-			
-			if ($response->stream !== 0){
-				$this->_statements[$response->stream]->setResponse($response);
-				unset($this->_statements[$response->stream]);
+			$responseStream = $response->getStream();
+			if ($responseStream !== 0){
+				$this->_statements[$responseStream]->setResponse($response);
+				unset($this->_statements[$responseStream]);
 			}
 		}
-		while($response->stream !== $streamId);
+		while($responseStream !== $streamId);
 		
 		return $response;
 	}
@@ -159,44 +160,31 @@ class Connection {
 	/**
 	 *
 	 * @throws Response\Exception
-	 * @return \Cassandra\Response\DataStream
+	 * @return \Cassandra\Response\Response
 	 */
 	protected function _getResponse() {
-		$data = $this->fetchData(9);
-		$data = unpack('Cversion/Cflags/nstream/Copcode/Nlength', $data);
-		if ($data['length']) {
-			$body = $this->fetchData($data['length']);
+		$header = unpack('Cversion/Cflags/nstream/Copcode/Nlength', $this->fetchData(9));
+		if ($header['length']) {
+			$body = $this->fetchData($header['length']);
 		} else {
 			$body = '';
 		}
 		
-		switch($data['opcode']){
-			case Frame::OPCODE_ERROR:
-				$response = new Response\Error($body);
-				break;
-			case Frame::OPCODE_READY:
-				$response = new Response\Ready($body);
-				break;
-			case Frame::OPCODE_AUTHENTICATE:
-				$response = new Response\Authenticate($body);
-				break;
-			case Frame::OPCODE_SUPPORTED:
-				$response = new Response\Supported($body);
-				break;
-			case Frame::OPCODE_RESULT:
-				$response = new Response\Result($body);
-				break;
-			case Frame::OPCODE_EVENT:
-				$response = new Response\Event($body);
-				break;
-			case Frame::OPCODE_AUTH_SUCCESS:
-				$response = new Response\AuthSuccess($body);
-				break;
-			default:
-				throw new Response\Exception('Unknown response');
-		}
+		static $responseClassMap = array(
+			Frame::OPCODE_ERROR			=> 'Cassandra\Response\Error',
+			Frame::OPCODE_READY			=> 'Cassandra\Response\Ready',
+			Frame::OPCODE_AUTHENTICATE	=> 'Cassandra\Response\Authenticate',
+			Frame::OPCODE_SUPPORTED		=> 'Cassandra\Response\Supported',
+			Frame::OPCODE_RESULT		=> 'Cassandra\Response\Result',
+			Frame::OPCODE_EVENT			=> 'Cassandra\Response\Event',
+			Frame::OPCODE_AUTH_SUCCESS	=> 'Cassandra\Response\AuthSuccess',
+		);
 		
-		$response->stream = $data['stream'];
+		if (!isset($responseClassMap[$header['opcode']]))
+			throw new Response\Exception('Unknown response');
+		
+		$responseClass = $responseClassMap[$header['opcode']];
+		$response = new $responseClass($header, $body);
 		
 		return $response;
 	}
@@ -248,7 +236,7 @@ class Connection {
 
 	/**
 	 * @param Request\Request $request
-	 * @return \Cassandra\Response\DataStream
+	 * @return \Cassandra\Response\Response
 	 */
 	public function sendRequest(Request\Request $request) {
 		if ($this->connection === null)
@@ -290,7 +278,7 @@ class Connection {
 	 * @param array $values
 	 * @param int $consistency
 	 * @param int $serialConsistency
-	 * @return Response\DataStream
+	 * @return Response\Response
 	 */
 	public function exec($cql, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, $serialConsistency = null){
 		if ($this->connection === null)

@@ -1,8 +1,9 @@
 <?php 
 namespace Cassandra\Response;
+use Cassandra\Protocol\Frame;
 use Cassandra\Protocol\DataType;
 
-class Result extends DataStream{
+class Result extends Response {
 	const VOID = 0x0001;
 	const ROWS = 0x0002;
 	const SET_KEYSPACE = 0x0003;
@@ -25,7 +26,7 @@ class Result extends DataStream{
 		$length = unpack('N', substr($this->data, $this->offset, 4))[1];
 		$this->offset += 4;
 		
-		if ($this->length < $this->offset + $length)
+		if ($length === 4294967295)
 			return null;
 		
 		// do not use $this->read() for performance
@@ -40,13 +41,12 @@ class Result extends DataStream{
 			case DataType::BIGINT:
 			case DataType::COUNTER:
 			case DataType::VARINT:
+			case DataType::TIMESTAMP:	//	use big int to present microseconds timestamp
 				$unpacked = unpack('N2', $data);
 				return $unpacked[1] << 32 | $unpacked[2];
 			case DataType::CUSTOM:
 			case DataType::BLOB:
 				$length = unpack('N', substr($data, 0, 4))[1];
-				if ($length == 4294967295 || $length + 4 > strlen($data))
-					return null;
 				return substr($data, 4, $length);
 			case DataType::BOOLEAN:
 				return (bool) unpack('C', $data)[1];
@@ -61,17 +61,16 @@ class Result extends DataStream{
 				return unpack('f', strrev($data))[1];
 			case DataType::INT:
 				return unpack('N', $data)[1];
-			case DataType::TIMESTAMP:
-				$unpacked = unpack('N2', $data);
-				return round($unpacked[1] * 4294967.296 + ($unpacked[2] / 1000));
 			case DataType::UUID:
 			case DataType::TIMEUUID:
 				$uuid = '';
-				for ($i = 0; $i < 16; ++$i) {
-					if ($i == 4 || $i == 6 || $i == 8 || $i == 10) {
+				$unpacked = unpack('n8', $data);
+				
+				for ($i = 1; $i <= 8; ++$i) {
+					if ($i == 3 || $i == 4 || $i == 5 || $i == 6) {
 						$uuid .= '-';
 					}
-					$uuid .= str_pad(dechex(ord($data{$i})), 2, '0', STR_PAD_LEFT);
+					$uuid .= str_pad(dechex($unpacked[$i]), 4, '0', STR_PAD_LEFT);
 				}
 				return $uuid;
 			case DataType::INET:

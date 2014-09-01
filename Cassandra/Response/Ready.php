@@ -1,7 +1,8 @@
 <?php
 namespace Cassandra\Response;
+use Cassandra\Protocol\Frame;
 
-class Ready extends DataStream {
+class Ready extends Response {
 	public function getData(){
 		/**
 		 * Indicates that the server is ready to process queries. This message will be

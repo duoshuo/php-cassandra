@@ -15,7 +15,7 @@ class Statement{
 	
 	/**
 	 * 
-	 * @var Response\DataStream
+	 * @var Response\Response
 	 */
 	protected $_response;
 	
@@ -34,7 +34,7 @@ class Statement{
 	
 	/**
 	 * 
-	 * @param Response\DataStream $response
+	 * @param Response\Response $response
 	 */
 	public function setResponse($response){
 		$this->_response = $response;
