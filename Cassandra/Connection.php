@@ -121,10 +121,13 @@ class Connection {
 	 * @return string
 	 */
 	private function fetchData($length) {
-		$data = socket_read($this->connection, $length);
-		while (strlen($data) < $length) {
-			$data .= socket_read($this->connection, $length);
+		$data = '';
+		$receivedBytes = 0;
+		do{
+			$data .= socket_read($this->connection, $length - $receivedBytes);
+			$receivedBytes = strlen($data);
 		}
+		while($receivedBytes < $length);
 		
 		$errorCode = socket_last_error($this->connection);
 		
@@ -303,7 +306,20 @@ class Connection {
 	}
 	
 	protected function _getNewStreamId(){
-		return ++$this->_lastStreamId;
+		$looped = false;
+		do{
+			++$this->_lastStreamId;
+			
+			if ($this->_lastStreamId === 32768){
+				if ($looped)
+					throw new Exception('Too many streams.');
+				
+				$this->_lastStreamId = 1;
+				$looped = true;
+			}
+		}
+		while(isset($this->_statements[$this->_lastStreamId]));
+		return $this->_lastStreamId;
 	}
 	
 	/**
