@@ -221,7 +221,7 @@ class Connection {
 			throw new Connection\Exception($response->getData());
 		
 		if ($response instanceof Response\Authenticate){
-			$nodeOptions = $this->connection->getNode()->getOptions();
+			$nodeOptions = $this->node->getOptions();
 			socket_write($this->connection, 
 				new Request\Credentials(
 					$nodeOptions['username'],

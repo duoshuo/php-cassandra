@@ -254,7 +254,7 @@ class Result extends DataStream{
 				$value = $this->_readByTypeFromStream($columns[$j]['type']);
 	
 				if ($j == $index)
-					$array[$i] = $row;
+					$array[$i] = $value;
 			}
 		}
 	

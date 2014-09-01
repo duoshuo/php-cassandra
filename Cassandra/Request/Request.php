@@ -30,12 +30,12 @@ class Request implements Frame{
 	/**
 	 * @var int
 	 */
-	protected $stream;
+	protected $stream = 0;
 	
 	/**
 	 * @var int
 	 */
-	protected $flags;
+	protected $flags = 0;
 	
 	/**
 	 * @param int $opcode
@@ -113,12 +113,12 @@ class Request implements Frame{
 		$remainder = '';
 	
 		if (!empty($values)) {
-			$flags |= self::FLAG_VALUES;
+			$flags |= Query::FLAG_VALUES;
 			$remainder .= self::valuesBinary($prepareData, $values);
 		}
 	
 		if (isset($serialConsistency)) {
-			$flags |= self::FLAG_WITH_SERIAL_CONSISTENCY;
+			$flags |= Query::FLAG_WITH_SERIAL_CONSISTENCY;
 			$remainder .= pack('n', $serialConsistency);
 		}
 	
