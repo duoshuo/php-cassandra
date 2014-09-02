@@ -1,9 +1,9 @@
 <?php
 namespace Cassandra\Response;
 
-use Cassandra\Protocol\DataType;
+use Cassandra\Type;
 
-trait DataReader {
+trait StreamReader {
 
 	/**
 	 * @var string
@@ -221,38 +221,38 @@ trait DataReader {
 	 */
 	public function readByType(array $type, $isCollectionElement = false) {
 		switch ($type['type']) {
-			case DataType::ASCII:
-			case DataType::VARCHAR:
-			case DataType::TEXT:
+			case Type\Base::ASCII:
+			case Type\Base::VARCHAR:
+			case Type\Base::TEXT:
 				return $isCollectionElement ? $this->readString() : $this->data;
-			case DataType::BIGINT:
-			case DataType::COUNTER:
-			case DataType::VARINT:
-			case DataType::TIMESTAMP:	//	use big int to present microseconds timestamp
+			case Type\Base::BIGINT:
+			case Type\Base::COUNTER:
+			case Type\Base::VARINT:
+			case Type\Base::TIMESTAMP:	//	use big int to present microseconds timestamp
 				return $this->readVarint();
-			case DataType::CUSTOM:
-			case DataType::BLOB:
+			case Type\Base::CUSTOM:
+			case Type\Base::BLOB:
 				return $this->readBytes();
-			case DataType::BOOLEAN:
+			case Type\Base::BOOLEAN:
 				return $this->readBoolean();
-			case DataType::DECIMAL:
+			case Type\Base::DECIMAL:
 				return $this->readDecimal();
-			case DataType::DOUBLE:
+			case Type\Base::DOUBLE:
 				return $this->readDouble();
-			case DataType::FLOAT:
+			case Type\Base::FLOAT:
 				return $this->readFloat();
-			case DataType::INT:
+			case Type\Base::INT:
 				return $this->readInt();
-			case DataType::UUID:
+			case Type\Base::UUID:
 				return $this->readUuid();
-			case DataType::TIMEUUID:
+			case Type\Base::TIMEUUID:
 				return $this->readUuid();
-			case DataType::INET:
+			case Type\Base::INET:
 				return $this->readInet();
-			case DataType::COLLECTION_LIST:
-			case DataType::COLLECTION_SET:
+			case Type\Base::COLLECTION_LIST:
+			case Type\Base::COLLECTION_SET:
 				return $this->readList($type['value']);
-			case DataType::COLLECTION_MAP:
+			case Type\Base::COLLECTION_MAP:
 				return $this->readMap($type['key'], $type['value']);
 		}
 

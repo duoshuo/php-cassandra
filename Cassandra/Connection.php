@@ -20,11 +20,6 @@ class Connection {
 	/**
 	 * @var array
 	 */
-	protected $_preparedCqls = [];
-
-	/**
-	 * @var array
-	 */
 	private $nodes;
 	
 	/**
@@ -140,6 +135,13 @@ class Connection {
 	
 	/**
 	 * 
+	 * @param Response\Event $response
+	 */
+	public function trigger($response){
+	}
+	
+	/**
+	 * 
 	 * @param int $streamId
 	 * @return Response\Response
 	 */
@@ -148,8 +150,13 @@ class Connection {
 			$response = $this->_getResponse();
 			$responseStream = $response->getStream();
 			if ($responseStream !== 0){
-				$this->_statements[$responseStream]->setResponse($response);
-				unset($this->_statements[$responseStream]);
+				if ($responseStream === -1){
+					$this->trigger($response);
+				}
+				else{
+					$this->_statements[$responseStream]->setResponse($response);
+					unset($this->_statements[$responseStream]);
+				}
 			}
 		}
 		while($responseStream !== $streamId);
@@ -238,12 +245,17 @@ class Connection {
 	 * @param Request\Request $request
 	 * @return \Cassandra\Response\Response
 	 */
-	public function sendRequest(Request\Request $request) {
+	public function syncRequest(Request\Request $request) {
 		if ($this->connection === null)
 			$this->connect();
 	
 		socket_write($this->connection, $request);
-		return $this->getResponse();
+		$response = $this->getResponse();
+		
+		if ($response instanceof Response\Error)
+			throw new Exception($response->getData());
+		
+		return $response;
 	}
 	
 	public function asyncRequest(Request\Request $request) {
@@ -256,58 +268,16 @@ class Connection {
 		
 		return $this->_statements[$streamId] = new Statement($this, $streamId);
 	}
-	
-	public function prepare($cql) {
-		if (!isset($this->_preparedCqls[$cql])) {
-			if ($this->connection === null)
-				$this->connect();
-			
-			socket_write($this->connection, new Request\Prepare($cql));
-			$response = $this->getResponse();
-			if (!$response instanceof Response\Result) {
-				throw new Response\Exception($response->getData());
-			}
-			$this->_preparedCqls[$cql] = $response->getData();
-		}
-		return $this->_preparedCqls[$cql];
-	}
-	
-	/**
-	 * 
-	 * @param string $cql
-	 * @param array $values
-	 * @param int $consistency
-	 * @param int $serialConsistency
-	 * @return Response\Response
-	 */
-	public function exec($cql, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, $serialConsistency = null){
-		if ($this->connection === null)
-			$this->connect();
-		
-		if (empty($values)) {
-			$request = new Request\Query($cql, $consistency, $serialConsistency);
-		} else {
-			$preparedData = $this->prepare($cql);
-			$request = new Request\Execute($preparedData, $values, $consistency, $serialConsistency);
-		}
-		socket_write($this->connection, $request);
-		$response = $this->getResponse();
-		
-		if ($response instanceof Response\Error)
-			throw new Exception($response->getData());
-		
-		return $response;
-	}
-	
+
 	protected function _getNewStreamId(){
 		$looped = false;
 		do{
 			++$this->_lastStreamId;
-			
+				
 			if ($this->_lastStreamId === 32768){
 				if ($looped)
 					throw new Exception('Too many streams.');
-				
+	
 				$this->_lastStreamId = 1;
 				$looped = true;
 			}
@@ -316,33 +286,55 @@ class Connection {
 		return $this->_lastStreamId;
 	}
 	
+	/***** Shorthand Methods ******/
+	
+	public function prepare($cql) {
+		$response = $this->syncRequest(new Request\Prepare($cql));
+		
+		return $response->getData();
+	}
+	
+	public function executeSync($queryId, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, $options = array()){
+		$request = new Request\Execute($queryId, $values, $consistency, $options);
+		
+		return $this->syncRequest($request);
+	}
+	
+	public function executeAsync($queryId, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, $options = array()){
+		$request = new Request\Execute($queryId, $values, $consistency, $options);
+		
+		return $this->asyncRequest($request);
+	}
+	
 	/**
 	 * 
 	 * @param string $cql
 	 * @param array $values
 	 * @param int $consistency
-	 * @param int $serialConsistency
+	 * @param array $options
+	 * @return Response\Response
+	 */
+	public function querySync($cql, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, $options = array()){
+		$request = new Request\Query($cql, $values, $consistency, $options);
+		
+		return $this->syncRequest($request);
+	}
+	
+	/**
+	 *
+	 * @param string $cql
+	 * @param array $values
+	 * @param int $consistency
+	 * @param array $options
 	 * @throws Exception
 	 * @return Statement
 	 */
-	public function execAsync($cql, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, $serialConsistency = null){
-		if ($this->connection === null)
-			$this->connect();
-	
-		if (empty($values)) {
-			$request = new Request\Query($cql, $consistency, $serialConsistency);
-		} else {
-			$preparedData = $this->prepare($cql);
-			$request = new Request\Execute($preparedData, $values, $consistency, $serialConsistency);
-		}
+	public function queryAsync($cql, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, $options = array()){
+		$request = new Request\Query($cql, $values, $consistency, $options);
 		
-		$streamId = $this->_getNewStreamId();
-		$request->setStream($streamId);
-		socket_write($this->connection, $request);
-		
-		return $this->_statements[$streamId] = new Statement($this, $streamId);
+		return $this->asyncRequest($request);
 	}
-
+	
 	/**
 	 * @param string $keyspace
 	 * @throws Exception
@@ -353,11 +345,6 @@ class Connection {
 		if ($this->connection === null)
 			return;
 		
-		socket_write($this->connection, new Request\Query("USE {$this->keyspace};", Request\Request::CONSISTENCY_QUORUM, null));
-		
-		$response = $this->getResponse();
-		
-		if ($response instanceof Response\Error)
-			throw new Exception($response->getData());
+		return $this->syncRequest(new Request\Query("USE {$this->keyspace};"));
 	}
 }

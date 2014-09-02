@@ -7,6 +7,30 @@ class Execute extends Request{
 	protected $opcode = Frame::OPCODE_EXECUTE;
 	
 	/**
+	 * 
+	 * @var int
+	 */
+	protected $_queryId;
+	
+	/**
+	 * 
+	 * @var array
+	 */
+	protected $_columns;
+	
+	/**
+	 * 
+	 * @var array
+	 */
+	protected $_values;
+	
+	/**
+	 * 
+	 * @var array
+	 */
+	protected $_options;
+	
+	/**
 	 * EXECUTE
 	 *
 	 * Executes a prepared query. The body of the message must be:
@@ -22,22 +46,23 @@ class Execute extends Request{
 	 * ALTER, TRUNCATE, ...).
 	 * The response from the server will be a RESULT message.
 	 *
-	 * @param array $prepareData
+	 * @param int $queryId
+	 * @param array $columns
 	 * @param array $values
 	 * @param int $consistency
 	 */
-	public function __construct(array $prepareData, array $values, $consistency, $serialConsistency) {
-		$this->_prepareData = $prepareData;
+	public function __construct($queryId, array $values, $consistency = Request::CONSISTENCY_QUORUM, $options = array()) {
+		$this->_queryId = $queryId;
 		$this->_values = $values;
 		 
 		$this->_consistency = $consistency;
-		$this->_serialConsistency = $serialConsistency;
+		$this->_options = $options;
 	}
 	
 	public function getBody(){
-		$body = pack('n', strlen($this->_prepareData['id'])) . $this->_prepareData['id'];
+		$body = pack('n', strlen($this->_queryId)) . $this->_queryId;
 		
-		$body .= Request::queryParameters($this->_consistency, $this->_serialConsistency, $this->_prepareData, $this->_values);
+		$body .= Request::queryParameters($this->_consistency, $this->_values, $options);
 		
 		return $body;
 	}

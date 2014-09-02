@@ -1,7 +1,7 @@
 <?php
 namespace Cassandra\Request;
 use Cassandra\Protocol\Frame;
-use Cassandra\Protocol\DataType;
+use Cassandra\Type;
 
 class Request implements Frame{
 
@@ -87,43 +87,91 @@ class Request implements Frame{
 		) . $body;
 	}
 	
-	public static function valuesBinary(array $prepareData, array $values) {
-		$valuesBinary = pack('n', count($prepareData['columns']));
-		// column names in lower case in metadata
+	/**
+	 * 
+	 * @param array $values
+	 * @throws Exception
+	 * @return string
+	 */
+	public static function valuesBinary(array $values) {
+		$valuesBinary = pack('n', count($values));
 		$values = array_change_key_case($values);
-	
-		foreach($prepareData['columns'] as $key => $column) {
-			if (isset($values[$column['name']])) {
-				$value = $values[$column['name']];
-			} elseif (isset($values[$key])) {
-				$value = $values[$key];
-			} else {
-				$value = null;
+		
+		foreach($values as $name => $value) {
+			if ($value instanceof Type\Base){
+				$binary = $value->getBinary();
 			}
-			$binary = DataType::getBinary($column['type'], $value);
-			$valuesBinary .= pack('N', strlen($binary)) . $binary;
+			elseif ($value === null){
+				$binary = null;
+			}
+			elseif (is_int($value)){
+				$binary = pack('N', $value);
+			}
+			elseif (is_string($value)){
+				$binary = $value;
+			}
+			elseif (is_bool($value)){
+				$binary = $value ? chr(1) : chr(0);
+			}
+			else{
+				throw new Exception('Unknown type.');
+			}
+			
+			if ($binary === null)
+				$valuesBinary .= pack('N', 4294967295);
+			else 
+				$valuesBinary .= pack('N', strlen($binary)) . $binary;
 		}
+		
 		return $valuesBinary;
 	}
 	
-	public static function queryParameters($consistency, $serialConsistency, array $prepareData = array(), array $values = array()) {
-		$binary = pack('n', $consistency);
+	/**
+	 * 
+	 * @param array $values
+	 * @param array $columns
+	 * @return array
+	 */
+	public static function strictTypeValues(array $values, array $columns) {
+		$strictTypeValues = array();
+		foreach($columns as $index => $column) {
+			$key = isset($values[$column['name']]) ? $column['name'] : $index;
+			
+			if (!isset($values[$key])){
+				$strictTypeValues[$key] = null;
+			}
+			elseif($values[$key] instanceof Type\Base){
+				$strictTypeValues[$key] = $values[$key];
+			}
+			else{
+				$strictTypeValues[$key] = Type\Base::getTypeObject($column['type'], $values[$key]);
+			}
+		}
+		
+		return $strictTypeValues;
+	}
 	
+	/**
+	 * 
+	 * @param array $options
+	 * @return string
+	 */
+	public static function queryParameters($consistency, array $values = [], array $options = []){
 		$flags = 0;
-		$remainder = '';
-	
+		$optional = '';
+		
 		if (!empty($values)) {
 			$flags |= Query::FLAG_VALUES;
-			$remainder .= self::valuesBinary($prepareData, $values);
+			$optional .= Request::valuesBinary($values);
 		}
-	
-		if (isset($serialConsistency)) {
+		
+		// TODO realize all optional parameters
+		
+		if (isset($options['serial_consistency'])) {
 			$flags |= Query::FLAG_WITH_SERIAL_CONSISTENCY;
-			$remainder .= pack('n', $serialConsistency);
+			$optional .= pack('n', $options['serial_consistency']);
 		}
-	
-		$binary .= pack('C', $flags) . $remainder;
-	
-		return $binary;
+		
+		return pack('n', $consistency) . pack('C', $flags) . $optional;
 	}
 }

@@ -3,7 +3,7 @@ namespace Cassandra\Response;
 use Cassandra\Protocol\Frame;
 
 class Response implements Frame{
-	use DataReader;
+	use StreamReader;
 	
 	/**
 	 * @var array

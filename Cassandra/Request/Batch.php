@@ -21,31 +21,22 @@ class Batch extends Request{
 	 */
 	protected $_batchType = null;
 	
+	/**
+	 * 
+	 * @var int
+	 */
 	protected $_consistency;
 	
-	protected $_serialConsistency;
-	
 	/**
 	 * 
-	 * @var \Cassandra\Connection
+	 * @var array
 	 */
-	protected $_connection;
-
-	public function __construct($type = Batch::TYPE_LOGGED, $consistency = Request::CONSISTENCY_QUORUM, $serialConsistency = null) {
+	protected $_options;
+	
+	public function __construct($type = Batch::TYPE_LOGGED, $consistency = Request::CONSISTENCY_QUORUM, $options = array()) {
 		$this->_batchType = $type;
 		$this->_consistency = $consistency;
-		$this->_serialConsistency = $serialConsistency;
-	}
-	
-	/**
-	 * 
-	 * @param \Cassandra\Connection $connection
-	 * @return self
-	 */
-	public function setConnection($connection){
-		$this->_connection = $connection;
-		
-		return $this;
+		$this->_options = $options;
 	}
 
 	/**
@@ -54,32 +45,40 @@ class Batch extends Request{
 	public function getBody() {
 		$body = pack('C', $this->_batchType);
 		$body .= pack('n', count($this->_queryArray)) . implode('', $this->_queryArray);
-
-		$body .= Request::queryParameters($this->_consistency, $this->_serialConsistency);
+		
+		$body .= Request::queryParameters($this->_consistency, [], $this->_options);
 		return $body;
 	}
 
 	/**
 	 * @param string $cql
 	 * @param array $values
+	 * @return self
 	 */
 	public function appendQuery($cql, array $values = array()) {
-		$kind = empty($values) ? 0 : 1;
-		$binary = pack('C', $kind);
+		$binary = pack('C', 0);
 	
-		if ($kind == 0) {
-			$binary .= pack('N', strlen($cql)) . $cql;
-			// 0 of following values
-			$binary .= pack('n', 0);
-		}
-		else {
-			if ($this->_connection === null)
-				throw new Connection\Exception('Cannot prepare query without a connection.');
-			
-			$preparedData = $this->_connection->prepare($cql);
-			$binary .= pack('n', strlen($preparedData['id'])) . $preparedData['id'];
-			$binary .= Request::valuesBinary($preparedData, $values);
-		}
+		$binary .= pack('N', strlen($cql)) . $cql;
+		$binary .= pack('n', count($values));
+		$binary .= Request::valuesBinary($values);
+		
+		$this->_queryArray[] = $binary;
+		
+		return $this;
+	}
+	
+	/**
+	 * 
+	 * @param string $queryId
+	 * @param array $values
+	 * @return self
+	 */
+	public function appendQueryId($queryId, array $values = array()) {
+		$binary = pack('C', 1);
+		
+		$binary .= pack('n', strlen($queryId)) . $queryId;
+		$binary .= Request::valuesBinary($values);
+		
 		$this->_queryArray[] = $binary;
 		
 		return $this;

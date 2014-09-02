@@ -14,11 +14,29 @@ class Query extends Request{
 	
 	protected $opcode = Frame::OPCODE_QUERY;
 	
+	/**
+	 * 
+	 * @var string
+	 */
 	protected $_cql;
 	
+	/**
+	 * 
+	 * @var array
+	 */
+	protected $_values;
+	
+	/**
+	 * 
+	 * @var int
+	 */
 	protected $_consistency;
 	
-	protected $_serialConsistency;
+	/**
+	 * 
+	 * @var array
+	 */
+	protected $_options;
 	
 	/**
 	 * QUERY
@@ -35,15 +53,16 @@ class Query extends Request{
 	 * @param string $cql
 	 * @param int $consistency
 	 */
-	public function __construct($cql, $consistency, $serialConsistency) {
+	public function __construct($cql, $values = [], $consistency = Request::CONSISTENCY_QUORUM, $options = array()) {
 		$this->_cql = $cql;
+		$this->_values = $values;
 		$this->_consistency = $consistency;
-		$this->_serialConsistency = $serialConsistency;
+		$this->_options = $options;
 	}
 	
 	public function getBody(){
 		$body = pack('N', strlen($this->_cql)) . $this->_cql;
-		$body .= Request::queryParameters($this->_consistency, $this->_serialConsistency);
+		$body .= Request::queryParameters($this->_consistency, $this->_values, $this->_options);
 		return $body;
 	}
 }

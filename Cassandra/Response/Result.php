@@ -1,7 +1,7 @@
 <?php 
 namespace Cassandra\Response;
 use Cassandra\Protocol\Frame;
-use Cassandra\Protocol\DataType;
+use Cassandra\Type;
 
 class Result extends Response {
 	const VOID = 0x0001;
@@ -17,12 +17,12 @@ class Result extends Response {
 	protected $_kind;
 	
 	/**
-	 * build a data stream first and read by type
+	 * read a [bytes] and read by type
 	 *
 	 * @param array $type
 	 * @return mixed
 	 */
-	protected function _readByTypeFromStream(array $type){
+	protected function _readBytesAndConvertToType(array $type){
 		$length = unpack('N', substr($this->data, $this->offset, 4))[1];
 		$this->offset += 4;
 		
@@ -34,35 +34,35 @@ class Result extends Response {
 		$this->offset += $length;
 		
 		switch ($type['type']) {
-			case DataType::ASCII:
-			case DataType::VARCHAR:
-			case DataType::TEXT:
+			case Type\Base::ASCII:
+			case Type\Base::VARCHAR:
+			case Type\Base::TEXT:
 				return $data;
-			case DataType::BIGINT:
-			case DataType::COUNTER:
-			case DataType::VARINT:
-			case DataType::TIMESTAMP:	//	use big int to present microseconds timestamp
+			case Type\Base::BIGINT:
+			case Type\Base::COUNTER:
+			case Type\Base::VARINT:
+			case Type\Base::TIMESTAMP:	//	use big int to present microseconds timestamp
 				$unpacked = unpack('N2', $data);
 				return $unpacked[1] << 32 | $unpacked[2];
-			case DataType::CUSTOM:
-			case DataType::BLOB:
+			case Type\Base::CUSTOM:
+			case Type\Base::BLOB:
 				$length = unpack('N', substr($data, 0, 4))[1];
 				return substr($data, 4, $length);
-			case DataType::BOOLEAN:
+			case Type\Base::BOOLEAN:
 				return (bool) unpack('C', $data)[1];
-			case DataType::DECIMAL:
+			case Type\Base::DECIMAL:
 				$unpacked = unpack('N3', $data);
 				$value = $unpacked[2] << 32 | $unpacked[3];
 				$len = strlen($value);
 				return substr($value, 0, $len - $unpacked[1]) . '.' . substr($value, $len - $unpacked[1]);
-			case DataType::DOUBLE:
+			case Type\Base::DOUBLE:
 				return unpack('d', strrev($data))[1];
-			case DataType::FLOAT:
+			case Type\Base::FLOAT:
 				return unpack('f', strrev($data))[1];
-			case DataType::INT:
+			case Type\Base::INT:
 				return unpack('N', $data)[1];
-			case DataType::UUID:
-			case DataType::TIMEUUID:
+			case Type\Base::UUID:
+			case Type\Base::TIMEUUID:
 				$uuid = '';
 				$unpacked = unpack('n8', $data);
 				
@@ -73,13 +73,13 @@ class Result extends Response {
 					$uuid .= str_pad(dechex($unpacked[$i]), 4, '0', STR_PAD_LEFT);
 				}
 				return $uuid;
-			case DataType::INET:
+			case Type\Base::INET:
 				return inet_ntop($data);
-			case DataType::COLLECTION_LIST:
-			case DataType::COLLECTION_SET:
+			case Type\Base::COLLECTION_LIST:
+			case Type\Base::COLLECTION_SET:
 				$dataStream = new DataStream($data);
 				return $dataStream->readList($type['value']);
-			case DataType::COLLECTION_MAP:
+			case Type\Base::COLLECTION_MAP:
 				$dataStream = new DataStream($data);
 				return $dataStream->readMap($type['key'], $type['value']);
 			default:
@@ -107,7 +107,7 @@ class Result extends Response {
 					$row = new \ArrayObject();
 						
 					foreach ($columns as $column)
-						$row[$column['name']] = $this->_readByTypeFromStream($column['type']);
+						$row[$column['name']] = $this->_readBytesAndConvertToType($column['type']);
 						
 					$rows[$i] = $row;
 				}
@@ -120,7 +120,7 @@ class Result extends Response {
 			case self::PREPARED:
 				return [
 					'id' => parent::readString(),
-					'columns' => $this->getColumns()
+					'metadata' => $this->getColumns()
 				];
 	
 			case self::SCHEMA_CHANGE:
@@ -142,14 +142,14 @@ class Result extends Response {
 			'type' => unpack('n', $this->read(2))[1]
 		];
 		switch ($data['type']) {
-			case DataType::CUSTOM:
+			case Type\Base::CUSTOM:
 				$data['name'] = $this->read(unpack('n', $this->read(2))[1]);
 				break;
-			case DataType::COLLECTION_LIST:
-			case DataType::COLLECTION_SET:
+			case Type\Base::COLLECTION_LIST:
+			case Type\Base::COLLECTION_SET:
 				$data['value'] = self::readType();
 				break;
-			case DataType::COLLECTION_MAP:
+			case Type\Base::COLLECTION_MAP:
 				$data['key'] = self::readType();
 				$data['value'] = self::readType();
 				break;
@@ -224,7 +224,7 @@ class Result extends Response {
 			$row = new $rowClass();
 	
 			foreach ($columns as $column)
-				$row[$column['name']] = $this->_readByTypeFromStream($column['type']);
+				$row[$column['name']] = $this->_readBytesAndConvertToType($column['type']);
 				
 			$rows[$i] = $row;
 		}
@@ -250,7 +250,7 @@ class Result extends Response {
 	
 		for($i = 0; $i < $rowCount; ++$i){
 			for($j = 0; $j < $columnCount; ++$j){
-				$value = $this->_readByTypeFromStream($columns[$j]['type']);
+				$value = $this->_readBytesAndConvertToType($columns[$j]['type']);
 	
 				if ($j == $index)
 					$array[$i] = $value;
@@ -278,7 +278,7 @@ class Result extends Response {
 	
 		$row = new $rowClass();
 		foreach ($columns as $column)
-			$row[$column['name']] = $this->_readByTypeFromStream($column['type']);
+			$row[$column['name']] = $this->_readBytesAndConvertToType($column['type']);
 	
 		return $row;
 	}
@@ -300,7 +300,7 @@ class Result extends Response {
 			return null;
 	
 		foreach ($columns as $column)
-			return $this->_readByTypeFromStream($column['type']);
+			return $this->_readBytesAndConvertToType($column['type']);
 	
 		return null;
 	}

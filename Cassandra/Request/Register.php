@@ -1,7 +1,7 @@
 <?php
 namespace Cassandra\Request;
 use Cassandra\Protocol\Frame;
-use Cassandra\Protocol\DataType;
+use Cassandra\Type;
 
 class Register extends Request{
 	
@@ -35,6 +35,6 @@ class Register extends Request{
 	}
 	
 	public function getBody(){
-		return DataType::getList($this->_events, array('type' => DataType::TEXT));
+		return (new Type\CollectionList($this->_events, array('type' => Type\Base::TEXT)))->getBinary();
 	}
 }

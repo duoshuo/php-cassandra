@@ -4,7 +4,7 @@ use Cassandra\Protocol\Frame;
 
 class DataStream {
 	
-	use DataReader;
+	use StreamReader;
 
 	/**
 	 * @param string $binary
