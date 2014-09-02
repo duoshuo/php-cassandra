@@ -42,74 +42,64 @@ $nodes = [
 	]
 ];
 
-// Connect to database.
-$database = new Cassandra\Database($nodes, 'my_keyspace');
-$database->connect();
+// Create a connection.
+$connection = new Cassandra\Connection($nodes, 'my_keyspace');
 
-// Run query.
-$users = $database->query('SELECT * FROM "users" WHERE "id" = :id', ['id' => 'c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc']);
-//Specify the consistency
-$users = $database->query(
+// Run query synchronously.
+$response = $connection->querySync('SELECT * FROM "users" WHERE "id" = :id', ['id' => 'c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc']);
+
+// Fetch data methods
+$response->fetchAll();
+$response->fetchCol();
+$response->fetchRow();
+$response->fetchOne();
+
+// Specify the consistency and optionas.
+$response = $database->query(
 	'SELECT * FROM "users" WHERE "id" = :id',
 	['id' => 'c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc'],
-	Cassandra\Protocol::CONSISTENCY_ONE
+	Cassandra\Request\Request::CONSISTENCY_QUORUM,
+	[
+		'page_size' => 100,
+		'names_for_values' => true,
+		'default_timestamp' => 1409670248663725,
+	]
 );
 
-var_dump($users);
-/*
-	result:
-		array(
-			[0] => array(
-				'id' => 'c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc',
-				'name' => 'userName',
-				'email' => 'user@email.com'
-			)
-		)
-*/
-
-//Run conditional insert and optionally specify the serial consistency
-$database->query(
-	'INSERT INTO users (id, name, email) VALUES (:id, :name, :email) IF NOT EXISTS',
-	array(
-		'id' => 'c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc',
-		'name' => 'userName',
-		'email' => 'user@email.com',
-	),
-	Cassandra\Protocol::CONSISTENCY_ONE,
-	Cassandra\Protocol::CONSISTENCY_LOCAL_SERIAL
-);
+// Run query asynchronously.
+$statement = $connection->queryAsync('SELECT * FROM "users"');
+$statement->getResponse();
 
 // Keyspace can be changed at runtime
-$database->setKeyspace('my_other_keyspace');
-// Get from other keyspace
-$urlsFromFacebook = $database->query('SELECT * FROM "urls" WHERE "host" = :host', ['host' => 'facebook.com']);
+$connection->setKeyspace('my_other_keyspace');
 
+```
+
+## Using Preparation
+
+```php
+$preparedData = $connection->prepare('INSERT INTO "users" ("id", "name", "email") VALUES (:id, :name, :email)');
+
+$strictValues = Cassandra\Request\Request::strictTypeValues(
+	[
+		'id' => 'c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc',
+		'name' => 'Mark',
+		'email' => 'mark@facebook.com',
+	],
+	$preparedData['metadata']
+);
+
+$connection->executeSync($preparedData['id'], $strictValues);
 ```
 
 ## Using Batch
 
 ```php
-    //optionally specify batch type
-	$database->beginBatch(Cassandra\Enum\BatchTypeEnum::UNLOGGED);
-	// all INSERT, UPDATE, DELETE query append into batch query stack for execution after applyBatch
-	$uuid = $database->query('SELECT uuid() as "uuid" FROM system.schema_keyspaces LIMIT 1;')[0]['uuid'];
-	$database->query(
-			'INSERT INTO "users" ("id", "name", "email") VALUES (:id, :name, :email);',
-			[
-				'id' => $uuid,
-				'name' => 'Mark',
-				'email' => 'mark@facebook.com'
-			]
-		);
+$batch = new Cassandra\Result\Batch();
 
-	$database->query(
-			'DELETE FROM "users" WHERE "email" = :email;',
-			[
-				'email' => 'durov@vk.com'
-			]
-		);
-    //optionally specify the consistency
-	$result = $database->applyBatch(Cassandra\Protocol::CONSISTENCY_QUORUM);
+$batch->appendQueryId($preparedData['id'], $strictValues);
+
+$connection->syncRequest($batch);
 ```
 
 ## Supported datatypes
