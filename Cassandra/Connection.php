@@ -310,7 +310,7 @@ class Connection {
 	 * @param array $options
 	 * @return Response\Response
 	 */
-	public function executeSync($queryId, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, array $options = []){
+	public function executeSync($queryId, array $values = [], $consistency = null, array $options = []){
 		$request = new Request\Execute($queryId, $values, $consistency, $options);
 		
 		return $this->syncRequest($request);
@@ -324,7 +324,7 @@ class Connection {
 	 * @param array $options
 	 * @return Statement
 	 */
-	public function executeAsync($queryId, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, array $options = []){
+	public function executeAsync($queryId, array $values = [], $consistency = null, array $options = []){
 		$request = new Request\Execute($queryId, $values, $consistency, $options);
 		
 		return $this->asyncRequest($request);
@@ -338,7 +338,7 @@ class Connection {
 	 * @param array $options
 	 * @return Response\Response
 	 */
-	public function querySync($cql, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, array $options = []){
+	public function querySync($cql, array $values = [], $consistency = null, array $options = []){
 		$request = new Request\Query($cql, $values, $consistency, $options);
 		
 		return $this->syncRequest($request);
@@ -353,7 +353,7 @@ class Connection {
 	 * @throws Exception
 	 * @return Statement
 	 */
-	public function queryAsync($cql, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, array $options = []){
+	public function queryAsync($cql, array $values = [], $consistency = null, array $options = []){
 		$request = new Request\Query($cql, $values, $consistency, $options);
 		
 		return $this->asyncRequest($request);

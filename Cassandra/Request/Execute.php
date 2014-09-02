@@ -47,15 +47,15 @@ class Execute extends Request{
 	 * The response from the server will be a RESULT message.
 	 *
 	 * @param int $queryId
-	 * @param array $columns
 	 * @param array $values
 	 * @param int $consistency
+	 * @param array $options
 	 */
-	public function __construct($queryId, array $values, $consistency = Request::CONSISTENCY_QUORUM, $options = array()) {
+	public function __construct($queryId, array $values, $consistency = null, $options = array()) {
 		$this->_queryId = $queryId;
 		$this->_values = $values;
 		 
-		$this->_consistency = $consistency;
+		$this->_consistency = $consistency ?: Request::CONSISTENCY_QUORUM;
 		$this->_options = $options;
 	}
 	
