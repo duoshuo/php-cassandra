@@ -13,7 +13,7 @@ abstract class Base{
 	const DOUBLE = 0x0007;
 	const FLOAT = 0x0008;
 	const INT = 0x0009;
-	const TEXT = 0x000A;
+	const TEXT = 0x000A;		// deprecated in Protocol v3
 	const TIMESTAMP = 0x000B;
 	const UUID = 0x000C;
 	const VARCHAR = 0x000D;
@@ -50,28 +50,33 @@ abstract class Base{
 	public static function getTypeObject(array $dataType, $value) {
 		switch($dataType['type']) {
 			case self::BLOB:
-			case self::CUSTOM:
 				return new Blob($value);
+			case self::CUSTOM:
+				return new Custom($value);
 			case self::TIMESTAMP:
 				if (is_double($value) && preg_match('~^\d{10}(.\d+)?$~', $value)) {
 					$value = (int)str_pad(substr(str_replace('.', '', $value), 0, 13), 13, '0');
 				} elseif (strlen($value) < 13) {
 					throw new Exception('Value of timestamp must have 13 digits.');
 				}
+				return new Timestamp($value);
 			case self::COUNTER:
+				return new Counter($value);
 			case self::BIGINT:
-			case self::VARINT:
 				return new Bigint($value);
+			case self::VARINT:
+				return new Varint($value);
 	
 			case self::BOOLEAN:
 				return new Boolean($value);
 	
 			case self::COLLECTION_SET:
+				return new CollectionSet($value, $dataType['value']);
 			case self::COLLECTION_LIST:
 				return new CollectionList($value, $dataType['value']);
 	
 			case self::COLLECTION_MAP:
-				return new Map($value, $dataType['key'], $dataType['value']);
+				return new CollectionMap($value, $dataType['key'], $dataType['value']);
 	
 			case self::DECIMAL:
 				return new Decimal($value);
@@ -89,11 +94,14 @@ abstract class Base{
 				return new Int($value);
 	
 			case self::ASCII:
+				return new Ascii($value);
 			case self::VARCHAR:
-			case self::TEXT:
-				return new Text($value);
+				return new Varchar($value);
+			case self::TEXT:	//	deprecated in Protocol v3
+				return new Varchar($value);
 	
 			case self::TIMEUUID:
+				return new Timeuuid($value);
 			case self::UUID:
 				return new Uuid($value);
 	

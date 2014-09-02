@@ -1,7 +1,7 @@
 <?php
 namespace Cassandra\Type;
 
-class Map extends Base{
+class CollectionMap extends Base{
 	
 	/**
 	 * @param array $values

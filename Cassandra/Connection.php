@@ -41,7 +41,7 @@ class Connection {
 	 * 
 	 * @var array
 	 */
-	protected $_statements = array();
+	protected $_statements = [];
 
 	/**
 	 * @param array $nodes
@@ -84,6 +84,9 @@ class Connection {
 		return $node;
 	}
 	
+	/**
+	 * 
+	 */
 	protected function _connect() {
 		try {
 			$this->node = $this->getRandomNode();
@@ -150,12 +153,12 @@ class Connection {
 			$response = $this->_getResponse();
 			$responseStream = $response->getStream();
 			if ($responseStream !== 0){
-				if ($responseStream === -1){
-					$this->trigger($response);
-				}
-				else{
+				if (isset($this->_statements[$responseStream])){
 					$this->_statements[$responseStream]->setResponse($response);
 					unset($this->_statements[$responseStream]);
+				}
+				elseif ($response instanceof Response\Event){
+					$this->trigger($response);
 				}
 			}
 		}
@@ -167,7 +170,7 @@ class Connection {
 	/**
 	 *
 	 * @throws Response\Exception
-	 * @return \Cassandra\Response\Response
+	 * @return Response\Response
 	 */
 	protected function _getResponse() {
 		$header = unpack('Cversion/Cflags/nstream/Copcode/Nlength', $this->fetchData(9));
@@ -197,7 +200,7 @@ class Connection {
 	}
 	
 	/**
-	 * @return \Cassandra\Connection\Node
+	 * @return Connection\Node
 	 */
 	public function getNode() {
 		return $this->node;
@@ -223,16 +226,7 @@ class Connection {
 		
 		if ($response instanceof Response\Authenticate){
 			$nodeOptions = $this->node->getOptions();
-			socket_write($this->connection, 
-				new Request\AuthResponse(
-					$nodeOptions['username'],
-					$nodeOptions['password']
-				)
-			);
-			$response = $this->getResponse();
-
-			if ($response instanceof Response\Error)
-				throw new Connection\Exception($response->getData());
+			$this->syncRequest(new Request\AuthResponse($nodeOptions['username'], $nodeOptions['password']));
 		}
 		
 		if (!empty($this->keyspace))
@@ -243,7 +237,7 @@ class Connection {
 
 	/**
 	 * @param Request\Request $request
-	 * @return \Cassandra\Response\Response
+	 * @return Response\Response
 	 */
 	public function syncRequest(Request\Request $request) {
 		if ($this->connection === null)
@@ -258,6 +252,11 @@ class Connection {
 		return $response;
 	}
 	
+	/**
+	 * 
+	 * @param Request\Request $request
+	 * @return Statement
+	 */
 	public function asyncRequest(Request\Request $request) {
 		if ($this->connection === null)
 			$this->connect();
@@ -269,6 +268,11 @@ class Connection {
 		return $this->_statements[$streamId] = new Statement($this, $streamId);
 	}
 
+	/**
+	 * 
+	 * @throws Exception
+	 * @return int
+	 */
 	protected function _getNewStreamId(){
 		$looped = false;
 		do{
@@ -287,20 +291,40 @@ class Connection {
 	}
 	
 	/***** Shorthand Methods ******/
-	
+	/**
+	 * 
+	 * @param string $cql
+	 * @return array
+	 */
 	public function prepare($cql) {
 		$response = $this->syncRequest(new Request\Prepare($cql));
 		
 		return $response->getData();
 	}
 	
-	public function executeSync($queryId, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, $options = array()){
+	/**
+	 * 
+	 * @param string $queryId
+	 * @param array $values
+	 * @param int $consistency
+	 * @param array $options
+	 * @return Response\Response
+	 */
+	public function executeSync($queryId, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, array $options = []){
 		$request = new Request\Execute($queryId, $values, $consistency, $options);
 		
 		return $this->syncRequest($request);
 	}
 	
-	public function executeAsync($queryId, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, $options = array()){
+	/**
+	 * 
+	 * @param string $queryId
+	 * @param array $values
+	 * @param int $consistency
+	 * @param array $options
+	 * @return Statement
+	 */
+	public function executeAsync($queryId, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, array $options = []){
 		$request = new Request\Execute($queryId, $values, $consistency, $options);
 		
 		return $this->asyncRequest($request);
@@ -314,7 +338,7 @@ class Connection {
 	 * @param array $options
 	 * @return Response\Response
 	 */
-	public function querySync($cql, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, $options = array()){
+	public function querySync($cql, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, array $options = []){
 		$request = new Request\Query($cql, $values, $consistency, $options);
 		
 		return $this->syncRequest($request);
@@ -329,7 +353,7 @@ class Connection {
 	 * @throws Exception
 	 * @return Statement
 	 */
-	public function queryAsync($cql, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, $options = array()){
+	public function queryAsync($cql, array $values = [], $consistency = Request\Request::CONSISTENCY_QUORUM, array $options = []){
 		$request = new Request\Query($cql, $values, $consistency, $options);
 		
 		return $this->asyncRequest($request);
@@ -338,6 +362,7 @@ class Connection {
 	/**
 	 * @param string $keyspace
 	 * @throws Exception
+	 * @return Response\Result
 	 */
 	public function setKeyspace($keyspace) {
 		$this->keyspace = $keyspace;
