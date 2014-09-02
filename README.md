@@ -46,7 +46,10 @@ $nodes = [
 $connection = new Cassandra\Connection($nodes, 'my_keyspace');
 
 // Run query synchronously.
-$response = $connection->querySync('SELECT * FROM "users" WHERE "id" = :id', ['id' => 'c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc']);
+$response = $connection->querySync(
+	'SELECT * FROM "users" WHERE "id" = :id',
+	['id' => new Cassandra\Type\Uuid('c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc')]
+);
 
 // Fetch data methods
 $response->fetchAll();
@@ -55,9 +58,9 @@ $response->fetchRow();
 $response->fetchOne();
 
 // Specify the consistency and optionas.
-$response = $database->query(
+$response = $connection->querySync(
 	'SELECT * FROM "users" WHERE "id" = :id',
-	['id' => 'c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc'],
+	['id' => new Cassandra\Type\Uuid('c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc')],
 	Cassandra\Request\Request::CONSISTENCY_QUORUM,
 	[
 		'page_size' => 100,
