@@ -62,7 +62,7 @@ class Execute extends Request{
 	public function getBody(){
 		$body = pack('n', strlen($this->_queryId)) . $this->_queryId;
 		
-		$body .= Request::queryParameters($this->_consistency, $this->_values, $options);
+		$body .= Request::queryParameters($this->_consistency, $this->_values, $this->_options);
 		
 		return $body;
 	}

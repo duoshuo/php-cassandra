@@ -1,7 +1,7 @@
 <?php
 namespace Cassandra\Response;
 
-class AuthSuccess extends DataStream {
+class AuthSuccess extends Response {
 	public function getData(){
 		/**
 		 * Indicates that the server is ready to process queries. This message will be

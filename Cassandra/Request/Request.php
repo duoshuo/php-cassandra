@@ -93,7 +93,7 @@ class Request implements Frame{
 	 * @throws Exception
 	 * @return string
 	 */
-	public static function valuesBinary(array $values) {
+	public static function valuesBinary(array $values, $namesForValues = false) {
 		$valuesBinary = pack('n', count($values));
 		$values = array_change_key_case($values);
 		
@@ -117,6 +117,9 @@ class Request implements Frame{
 				throw new Exception('Unknown type.');
 			}
 			
+			if ($namesForValues)
+				$valuesBinary .= pack('n', strlen($name)) . $name;
+
 			if ($binary === null)
 				$valuesBinary .= pack('N', 4294967295);
 			else 
@@ -162,16 +165,36 @@ class Request implements Frame{
 		
 		if (!empty($values)) {
 			$flags |= Query::FLAG_VALUES;
-			$optional .= Request::valuesBinary($values);
+			$optional .= Request::valuesBinary($values, isset($options['names_for_values']));
 		}
-		
-		// TODO realize all optional parameters
-		
+
+		if (isset($options['skip_metadata']))
+			$flags |= Query::FLAG_SKIP_METADATA;
+
+		if (isset($options['page_size'])) {
+			$flags |= Query::FLAG_PAGE_SIZE;
+			$optional .= pack('N', $options['page_size']);
+		}
+
+		if (isset($options['paging_state'])) {
+			$flags |= Query::FLAG_WITH_PAGING_STATE;
+			$optional .= pack('N', strlen($options['paging_state'])) . $options['paging_state'];
+		}
+
 		if (isset($options['serial_consistency'])) {
 			$flags |= Query::FLAG_WITH_SERIAL_CONSISTENCY;
 			$optional .= pack('n', $options['serial_consistency']);
 		}
-		
+
+		if (isset($options['default_timestamp'])) {
+			$flags |= Query::FLAG_WITH_DEFAULT_TIMESTAMP;
+			$bigint = new Type\Bigint($options['default_timestamp']);
+			$optional .= $bigint->getBinary();
+		}
+
+		if (isset($options['names_for_values']))
+			$flags |= Query::FLAG_WITH_NAMES_FOR_VALUES;
+
 		return pack('n', $consistency) . pack('C', $flags) . $optional;
 	}
 }

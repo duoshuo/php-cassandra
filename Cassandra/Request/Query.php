@@ -10,7 +10,7 @@ class Query extends Request{
 	const FLAG_WITH_PAGING_STATE = 0x08;
 	const FLAG_WITH_SERIAL_CONSISTENCY = 0x10;
 	const FLAG_WITH_DEFAULT_TIMESTAMP = 0x20;
-	const FLAG_WITH_NAME_FOR_VALUES = 0x40;
+	const FLAG_WITH_NAMES_FOR_VALUES = 0x40;
 	
 	protected $opcode = Frame::OPCODE_QUERY;
 	
