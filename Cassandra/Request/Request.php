@@ -135,9 +135,9 @@ class Request implements Frame{
 	 * @param array $columns
 	 * @return array
 	 */
-	public static function strictTypeValues(array $values, array $columns) {
+	public static function strictTypeValues(array $values, array $metadata) {
 		$strictTypeValues = array();
-		foreach($columns as $index => $column) {
+		foreach($metadata['columns'] as $index => $column) {
 			$key = isset($values[$column['name']]) ? $column['name'] : $index;
 			
 			if (!isset($values[$key])){

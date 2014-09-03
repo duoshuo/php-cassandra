@@ -16,6 +16,8 @@ class Result extends Response {
 	
 	protected $_kind;
 	
+	protected $_metadata;
+
 	/**
 	 * read a [bytes] and read by type
 	 *
@@ -110,10 +112,18 @@ class Result extends Response {
 				return null;
 	
 			case self::ROWS:
-				$columns = $this->getColumns();
+				$metadata = $this->_readMetadata();
+
+				if (isset($metadata['columns']))
+					$columns = $metadata['columns'];
+				elseif(isset($this->_metadata))
+					$columns = $this->_metadata['columns'];
+				else
+					throw new Exception('Missing Result Metadata');
+
 				$rowCount = parent::readInt();
 				$rows = new \SplFixedArray($rowCount);
-				$rows->columns = $columns;
+				$rows->metadata = $metadata;
 	
 				for ($i = 0; $i < $rowCount; ++$i) {
 					$row = new \ArrayObject();
@@ -132,7 +142,8 @@ class Result extends Response {
 			case self::PREPARED:
 				return [
 					'id' => parent::readString(),
-					'metadata' => $this->getColumns()
+					'metadata' => $this->_readMetadata(),
+					'result_metadata' => $this->_readMetadata(),
 				];
 	
 			case self::SCHEMA_CHANGE:
@@ -203,45 +214,54 @@ class Result extends Response {
 	
 		return $this->_kind;
 	}
+
+	public function setMetadata(array $metadata) {
+		$this->_metadata = $metadata;
+	}
 	
 	/**
 	 * Return metadata
 	 * @return array
 	 */
-	private function getColumns() {
-		$unpacked = unpack('N2', $this->read(8));
-		$flags = $unpacked[1];
-		$columnCount = $unpacked[2];
-		
-		if ($flags & self::ROWS_FLAG_GLOBAL_TABLES_SPEC) {
-			$keyspace = $this->read(unpack('n', $this->read(2))[1]);
-			$tableName = $this->read(unpack('n', $this->read(2))[1]);
-			
-			$columns = [];
-			for ($i = 0; $i < $columnCount; ++$i) {
-				$columnData = [
-					'keyspace' => $keyspace,
-					'tableName' => $tableName,
-					'name' => $this->read(unpack('n', $this->read(2))[1]),
-					'type' => self::readType()
-				];
-				$columns[] = $columnData;
+	protected function _readMetadata() {
+		$metadata = unpack('Nflags/Ncolumns_count', $this->read(8));
+		$flags = $metadata['flags'];
+
+		if ($flags & self::ROWS_FLAG_HAS_MORE_PAGES)
+			$metadata['page_state'] = parent::readBytes();
+
+		if (!($flags & self::ROWS_FLAG_NO_METADATA)) {
+			if ($flags & self::ROWS_FLAG_GLOBAL_TABLES_SPEC) {
+				$keyspace = $this->read(unpack('n', $this->read(2))[1]);
+				$tableName = $this->read(unpack('n', $this->read(2))[1]);
+
+				$columns = [];
+				for ($i = 0; $i < $metadata['columns_count']; ++$i) {
+					$columnData = [
+						'keyspace' => $keyspace,
+						'tableName' => $tableName,
+						'name' => $this->read(unpack('n', $this->read(2))[1]),
+						'type' => self::readType()
+					];
+					$columns[] = $columnData;
+				}
 			}
-		}
-		else {
-			$columns = [];
-			for ($i = 0; $i < $columnCount; ++$i) {
-				$columnData = [
-					'keyspace' => $this->read(unpack('n', $this->read(2))[1]),
-					'tableName' => $this->read(unpack('n', $this->read(2))[1]),
-					'name' => $this->read(unpack('n', $this->read(2))[1]),
-					'type' => self::readType()
-				];
-				$columns[] = $columnData;
+			else {
+				$columns = [];
+				for ($i = 0; $i < $metadata['columns_count']; ++$i) {
+					$columnData = [
+						'keyspace' => $this->read(unpack('n', $this->read(2))[1]),
+						'tableName' => $this->read(unpack('n', $this->read(2))[1]),
+						'name' => $this->read(unpack('n', $this->read(2))[1]),
+						'type' => self::readType()
+					];
+					$columns[] = $columnData;
+				}
 			}
+			$metadata['columns'] = $columns;
 		}
 	
-		return $columns;
+		return $metadata;
 	}
 	
 	/**
@@ -254,10 +274,18 @@ class Result extends Response {
 			throw new Exception('Unexpected Response: ' . $this->getKind());
 		}
 		$this->offset = 4;
-		$columns = $this->getColumns();
+		$metadata = $this->_readMetadata();
+
+		if (isset($metadata['columns']))
+			$columns = $metadata['columns'];
+		elseif(isset($this->_metadata))
+			$columns = $this->_metadata['columns'];
+		else
+			throw new Exception('Missing Result Metadata');
+
 		$rowCount = parent::readInt();
 		$rows = new \SplFixedArray($rowCount);
-		$rows->columns = $columns;
+		$rows->metadata = $metadata;
 	
 		for ($i = 0; $i < $rowCount; ++$i) {
 			$row = new $rowClass();
@@ -270,7 +298,7 @@ class Result extends Response {
 	
 		return $rows;
 	}
-	
+
 	/**
 	 *
 	 * @throws Exception
@@ -281,7 +309,15 @@ class Result extends Response {
 			throw new Exception('Unexpected Response: ' . $this->getKind());
 		}
 		$this->offset = 4;
-		$columns = $this->getColumns();
+		$metadata = $this->_readMetadata();
+
+		if (isset($metadata['columns']))
+			$columns = $metadata['columns'];
+		elseif(isset($this->_metadata))
+			$columns = $this->_metadata['columns'];
+		else
+			throw new Exception('Missing Result Metadata');
+
 		$rowCount = parent::readInt();
 	
 		$array = new \SplFixedArray($rowCount);
@@ -308,7 +344,15 @@ class Result extends Response {
 			throw new Exception('Unexpected Response: ' . $this->getKind());
 		}
 		$this->offset = 4;
-		$columns = $this->getColumns();
+		$metadata = $this->_readMetadata();
+
+		if (isset($metadata['columns']))
+			$columns = $metadata['columns'];
+		elseif(isset($this->_metadata))
+			$columns = $this->_metadata['columns'];
+		else
+			throw new Exception('Missing Result Metadata');
+
 		$rowCount = parent::readInt();
 	
 		if ($rowCount === 0)
@@ -331,7 +375,15 @@ class Result extends Response {
 			throw new Exception('Unexpected Response: ' . $this->getKind());
 		}
 		$this->offset = 4;
-		$columns = $this->getColumns();
+		$metadata = $this->_readMetadata();
+
+		if (isset($metadata['columns']))
+			$columns = $metadata['columns'];
+		elseif(isset($this->_metadata))
+			$columns = $this->_metadata['columns'];
+		else
+			throw new Exception('Missing Result Metadata');
+
 		$rowCount = parent::readInt();
 	
 		if ($rowCount === 0)
