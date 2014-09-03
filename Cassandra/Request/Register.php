@@ -35,6 +35,6 @@ class Register extends Request{
 	}
 	
 	public function getBody(){
-		return (new Type\CollectionList($this->_events, array('type' => Type\Base::TEXT)))->getBinary();
+		return (new Type\CollectionList($this->_events, Type\Base::TEXT))->getBinary();
 	}
 }

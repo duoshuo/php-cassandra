@@ -19,10 +19,10 @@ class Result extends Response {
 	/**
 	 * read a [bytes] and read by type
 	 *
-	 * @param array $type
+	 * @param int|array $type
 	 * @return mixed
 	 */
-	protected function _readBytesAndConvertToType(array $type){
+	protected function _readBytesAndConvertToType($type){
 		$length = unpack('N', substr($this->data, $this->offset, 4))[1];
 		$this->offset += 4;
 		
@@ -33,7 +33,7 @@ class Result extends Response {
 		$data = substr($this->data, $this->offset, $length);
 		$this->offset += $length;
 		
-		switch ($type['type']) {
+		switch ($type) {
 			case Type\Base::ASCII:
 			case Type\Base::VARCHAR:
 			case Type\Base::TEXT:
@@ -44,7 +44,6 @@ class Result extends Response {
 			case Type\Base::TIMESTAMP:	//	use big int to present microseconds timestamp
 				$unpacked = unpack('N2', $data);
 				return $unpacked[1] << 32 | $unpacked[2];
-			case Type\Base::CUSTOM:
 			case Type\Base::BLOB:
 				$length = unpack('N', substr($data, 0, 4))[1];
 				return substr($data, 4, $length);
@@ -75,14 +74,27 @@ class Result extends Response {
 				return $uuid;
 			case Type\Base::INET:
 				return inet_ntop($data);
-			case Type\Base::COLLECTION_LIST:
-			case Type\Base::COLLECTION_SET:
-				$dataStream = new DataStream($data);
-				return $dataStream->readList($type['value']);
-			case Type\Base::COLLECTION_MAP:
-				$dataStream = new DataStream($data);
-				return $dataStream->readMap($type['key'], $type['value']);
 			default:
+				if (is_array($type)){
+					switch($type['type']){
+						case Type\Base::COLLECTION_LIST:
+						case Type\Base::COLLECTION_SET:
+							$dataStream = new DataStream($data);
+							return $dataStream->readList($type['value']);
+						case Type\Base::COLLECTION_MAP:
+							$dataStream = new DataStream($data);
+							return $dataStream->readMap($type['key'], $type['value']);
+						case Type\Base::UDT:
+							throw new Exception('Unsupported Type UDT.');
+						case Type\Base::TUPLE:
+							throw new Exception('Unsupported Type Tuple.');
+						case Type\Base::CUSTOM:
+						default:
+							$length = unpack('N', substr($data, 0, 4))[1];
+							return substr($data, 4, $length);
+					}
+				}
+				
 				trigger_error('Unknown type ' . var_export($type, true));
 				return null;
 		}
@@ -135,27 +147,54 @@ class Result extends Response {
 	}
 	
 	/**
-	 * @return mixed
+	 * @return int|array
 	 */
 	protected function readType(){
-		$data = [
-			'type' => unpack('n', $this->read(2))[1]
-		];
-		switch ($data['type']) {
+		$type = unpack('n', $this->read(2))[1];
+		switch ($type) {
 			case Type\Base::CUSTOM:
-				$data['name'] = $this->read(unpack('n', $this->read(2))[1]);
-				break;
+				return [
+					'type'	=> $type,
+					'name'	=> self::readString(),
+				];
 			case Type\Base::COLLECTION_LIST:
 			case Type\Base::COLLECTION_SET:
-				$data['value'] = self::readType();
-				break;
+				return [
+					'type'	=> $type,
+					'value'	=> self::readType(),
+				];
 			case Type\Base::COLLECTION_MAP:
-				$data['key'] = self::readType();
-				$data['value'] = self::readType();
-				break;
+				return [
+					'type'	=> $type,
+					'key'	=> self::readType(),
+					'value'	=> self::readType(),
+				];
+			case Type\Base::UDT:
+				$data = [
+					'type'	=> $type,
+					'keyspace'=>self::readString(),
+					'name'	=> self::readString(),
+					'names'	=>	[],
+				];
+				$length = self::readShort();
+				for($i = 0; $i < $length; ++$i){
+					$key = self::readString();
+					$data['names'][$key] = self::readType();
+				}
+				return $data;
+			case Type\Base::TUPLE:
+				$data = [
+					'type'	=> $type,
+					'types'	=>	[],
+				];
+				$length = self::readShort();
+				for($i = 0; $i < $length; ++$i){
+					$data['types'][] = self::readType();
+				}
+				return $data;
 			default:
+				return $type;
 		}
-		return $data;
 	}
 
 	public function getKind(){
@@ -243,14 +282,13 @@ class Result extends Response {
 		}
 		$this->offset = 4;
 		$columns = $this->getColumns();
-		$columnCount = count($columns);
 		$rowCount = parent::readInt();
 	
 		$array = new \SplFixedArray($rowCount);
 	
 		for($i = 0; $i < $rowCount; ++$i){
-			for($j = 0; $j < $columnCount; ++$j){
-				$value = $this->_readBytesAndConvertToType($columns[$j]['type']);
+			foreach($columns as $j => $column){
+				$value = $this->_readBytesAndConvertToType($column['type']);
 	
 				if ($j == $index)
 					$array[$i] = $value;

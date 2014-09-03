@@ -47,12 +47,17 @@ abstract class Base{
 		return (string) $this->_value;
 	}
 	
-	public static function getTypeObject(array $dataType, $value) {
-		switch($dataType['type']) {
+	/**
+	 * 
+	 * @param int|array $dataType
+	 * @param mixed $value
+	 * @throws Exception
+	 * @return Base
+	 */
+	public static function getTypeObject($dataType, $value) {
+		switch($dataType) {
 			case self::BLOB:
 				return new Blob($value);
-			case self::CUSTOM:
-				return new Custom($value);
 			case self::TIMESTAMP:
 				if (is_double($value) && preg_match('~^\d{10}(.\d+)?$~', $value)) {
 					$value = (int)str_pad(substr(str_replace('.', '', $value), 0, 13), 13, '0');
@@ -69,14 +74,6 @@ abstract class Base{
 	
 			case self::BOOLEAN:
 				return new Boolean($value);
-	
-			case self::COLLECTION_SET:
-				return new CollectionSet($value, $dataType['value']);
-			case self::COLLECTION_LIST:
-				return new CollectionList($value, $dataType['value']);
-	
-			case self::COLLECTION_MAP:
-				return new CollectionMap($value, $dataType['key'], $dataType['value']);
 	
 			case self::DECIMAL:
 				return new Decimal($value);
@@ -106,6 +103,24 @@ abstract class Base{
 				return new Uuid($value);
 	
 			default:
+				if (is_array($dataType)){
+					switch($dataType['type']){
+						case self::CUSTOM:
+							return new Custom($value, $dataType['name']);
+						case self::COLLECTION_SET:
+							return new CollectionSet($value, $dataType['value']);
+						case self::COLLECTION_LIST:
+							return new CollectionList($value, $dataType['value']);
+						case self::COLLECTION_MAP:
+							return new CollectionMap($value, $dataType['key'], $dataType['value']);
+						case self::UDT:
+							throw new Exception('Unsupported Type UDT.');
+						case self::TUPLE:
+							throw new Exception('Unsupported Type Tuple.');
+						default:
+							return new Blob($value);
+					}
+				}
 				trigger_error('Unknown type.');
 		}
 	
