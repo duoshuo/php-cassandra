@@ -8,29 +8,29 @@ class Connection {
 	 * Connection options
 	 * @var array
 	 */
-	private $options = [
+	protected $options = [
 		'CQL_VERSION' => '3.0.0'
 	];
 
 	/**
 	 * @var string
 	 */
-	private $keyspace;
+	protected $keyspace;
 
 	/**
-	 * @var array
+	 * @var array|Iterator
 	 */
-	private $nodes;
-	
+	protected $nodes;
+
 	/**
 	 * @var Node
 	 */
-	private $node;
+	protected $node;
 	
 	/**
 	 * @var resource
 	 */
-	private $connection;
+	protected $connection;
 	
 	/**
 	 * @var int
@@ -42,58 +42,42 @@ class Connection {
 	 * @var array
 	 */
 	protected $_statements = [];
+	
+	/**
+	 * 
+	 * @var array
+	 */
+	protected $_recycledStreams = [];
 
 	/**
-	 * @param array $nodes
+	 * @param array|\Traversable $nodes
 	 * @param string $keyspace
 	 * @param array $options
 	 */
-	public function __construct(array $nodes, $keyspace = '', array $options = []) {
+	public function __construct($nodes, $keyspace = '', array $options = []) {
+		if (is_array($nodes))
+			shuffle($nodes);
+		
 		$this->nodes = $nodes;
 		$this->options = array_merge($this->options, $options);
 		$this->keyspace = $keyspace;
 	}
 	
 	/**
-	 * @param string $host
-	 */
-	public function appendNode($host) {
-		$this->nodes[] = $host;
-	}
-	
-	/**
-	 * @return Node
-	 * @throws Connection\Exception
-	 */
-	public function getRandomNode() {
-		if (empty($this->nodes)) throw new Connection\Exception('Node list is empty.');
-		$nodeKey = array_rand($this->nodes);
-		$node = $this->nodes[$nodeKey];
-		try {
-			if ((array)$node === $node) {
-				$node = new Connection\Node($nodeKey, $node);
-				unset($this->nodes[$nodeKey]);
-			} else {
-				$node = new Connection\Node($node);
-				unset($this->nodes[$nodeKey]);
-			}
-		} catch (\InvalidArgumentException $e) {
-			trigger_error($e->getMessage());
-		}
-	
-		return $node;
-	}
-	
-	/**
 	 * 
 	 */
 	protected function _connect() {
-		try {
-			$this->node = $this->getRandomNode();
-			$this->connection = $this->node->getConnection();
-		} catch (Connection\Exception $e) {
-			$this->_connect();
+		foreach($this->nodes as $options){
+			try {
+				$this->node = new Connection\Node($options);
+				$this->connection = $this->node->getConnection();
+				return;
+			} catch (Connection\Exception $e) {
+				continue;
+			}
 		}
+		
+		throw new Exception("Unable to connect to all Cassandra nodes.");
 	}
 	
 	/**
@@ -118,7 +102,7 @@ class Connection {
 	 * @throws Connection\Exception
 	 * @return string
 	 */
-	private function fetchData($length) {
+	protected function fetchData($length) {
 		$data = '';
 		$receivedBytes = 0;
 		do{
@@ -151,18 +135,8 @@ class Connection {
 	public function getResponse($streamId = 0){
 		do{
 			$response = $this->_getResponse();
-			$responseStream = $response->getStream();
-			if ($responseStream !== 0){
-				if (isset($this->_statements[$responseStream])){
-					$this->_statements[$responseStream]->setResponse($response);
-					unset($this->_statements[$responseStream]);
-				}
-				elseif ($response instanceof Response\Event){
-					$this->trigger($response);
-				}
-			}
 		}
-		while($responseStream !== $streamId);
+		while($response->getStream() !== $streamId);
 		
 		return $response;
 	}
@@ -196,6 +170,17 @@ class Connection {
 		$responseClass = $responseClassMap[$header['opcode']];
 		$response = new $responseClass($header, $body);
 		
+		if ($header['stream'] !== 0){
+			if (isset($this->_statements[$header['stream']])){
+				$this->_statements[$header['stream']]->setResponse($response);
+				unset($this->_statements[$header['stream']]);
+				$this->_recycledStreams[] = $header['stream'];
+			}
+			elseif ($response instanceof Response\Event){
+				$this->trigger($response);
+			}
+		}
+		
 		return $response;
 	}
 	
@@ -208,7 +193,6 @@ class Connection {
 
 	/**
 	 * Connect to database
-	 * @throws Connection\Exception
 	 * @throws Exception
 	 * @return bool
 	 */
@@ -218,11 +202,7 @@ class Connection {
 		
 		$this->_connect();
 		
-		socket_write($this->connection, new Request\Startup($this->options));
-		$response = $this->getResponse();
-		
-		if ($response instanceof Response\Error)
-			throw new Connection\Exception($response->getData());
+		$response = $this->syncRequest(new Request\Startup($this->options));
 		
 		if ($response instanceof Response\Authenticate){
 			$nodeOptions = $this->node->getOptions();
@@ -274,20 +254,14 @@ class Connection {
 	 * @return int
 	 */
 	protected function _getNewStreamId(){
-		$looped = false;
-		do{
-			++$this->_lastStreamId;
-				
-			if ($this->_lastStreamId === 32768){
-				if ($looped)
-					throw new Exception('Too many streams.');
-	
-				$this->_lastStreamId = 1;
-				$looped = true;
-			}
+		if ($this->_lastStreamId < 32767)
+			return ++$this->_lastStreamId;
+		
+		while (empty($this->_recycledStreams)){
+			$this->_getResponse();
 		}
-		while(isset($this->_statements[$this->_lastStreamId]));
-		return $this->_lastStreamId;
+		
+		return array_shift($this->_recycledStreams);
 	}
 	
 	/***** Shorthand Methods ******/

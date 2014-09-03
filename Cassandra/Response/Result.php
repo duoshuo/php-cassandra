@@ -16,6 +16,10 @@ class Result extends Response {
 	
 	protected $_kind;
 	
+	/**
+	 * 
+	 * @var array
+	 */
 	protected $_metadata;
 
 	/**
@@ -112,29 +116,7 @@ class Result extends Response {
 				return null;
 	
 			case self::ROWS:
-				$metadata = $this->_readMetadata();
-
-				if (isset($metadata['columns']))
-					$columns = $metadata['columns'];
-				elseif(isset($this->_metadata))
-					$columns = $this->_metadata['columns'];
-				else
-					throw new Exception('Missing Result Metadata');
-
-				$rowCount = parent::readInt();
-				$rows = new \SplFixedArray($rowCount);
-				$rows->metadata = $metadata;
-	
-				for ($i = 0; $i < $rowCount; ++$i) {
-					$row = new \ArrayObject();
-						
-					foreach ($columns as $column)
-						$row[$column['name']] = $this->_readBytesAndConvertToType($column['type']);
-						
-					$rows[$i] = $row;
-				}
-	
-				return $rows;
+				return $this->fetchAll();
 	
 			case self::SET_KEYSPACE:
 				return parent::readString();
@@ -266,6 +248,7 @@ class Result extends Response {
 	
 	/**
 	 *
+	 * @param string $rowClass
 	 * @throws Exception
 	 * @return \SplFixedArray
 	 */
@@ -278,7 +261,7 @@ class Result extends Response {
 
 		if (isset($metadata['columns']))
 			$columns = $metadata['columns'];
-		elseif(isset($this->_metadata))
+		elseif(isset($this->_metadata['columns']))
 			$columns = $this->_metadata['columns'];
 		else
 			throw new Exception('Missing Result Metadata');
@@ -301,6 +284,7 @@ class Result extends Response {
 
 	/**
 	 *
+	 * @param int $index
 	 * @throws Exception
 	 * @return \SplFixedArray
 	 */
@@ -313,7 +297,7 @@ class Result extends Response {
 
 		if (isset($metadata['columns']))
 			$columns = $metadata['columns'];
-		elseif(isset($this->_metadata))
+		elseif(isset($this->_metadata['columns']))
 			$columns = $this->_metadata['columns'];
 		else
 			throw new Exception('Missing Result Metadata');
@@ -336,6 +320,7 @@ class Result extends Response {
 	
 	/**
 	 *
+	 * @param string $rowClass
 	 * @throws Exception
 	 * @return \ArrayObject
 	 */
@@ -348,7 +333,7 @@ class Result extends Response {
 
 		if (isset($metadata['columns']))
 			$columns = $metadata['columns'];
-		elseif(isset($this->_metadata))
+		elseif(isset($this->_metadata['columns']))
 			$columns = $this->_metadata['columns'];
 		else
 			throw new Exception('Missing Result Metadata');
@@ -379,7 +364,7 @@ class Result extends Response {
 
 		if (isset($metadata['columns']))
 			$columns = $metadata['columns'];
-		elseif(isset($this->_metadata))
+		elseif(isset($this->_metadata['columns']))
 			$columns = $this->_metadata['columns'];
 		else
 			throw new Exception('Missing Result Metadata');
