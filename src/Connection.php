@@ -45,9 +45,9 @@ class Connection {
 	
 	/**
 	 * 
-	 * @var array
+	 * @var \SplQueue
 	 */
-	protected $_recycledStreams = [];
+	protected $_recycledStreams;
 
 	/**
 	 * @param array|\Traversable $nodes
@@ -61,6 +61,7 @@ class Connection {
 		$this->nodes = $nodes;
 		$this->options = array_merge($this->options, $options);
 		$this->keyspace = $keyspace;
+		$this->_recycledStreams = new \SplQueue();
 	}
 	
 	/**
@@ -174,7 +175,7 @@ class Connection {
 			if (isset($this->_statements[$header['stream']])){
 				$this->_statements[$header['stream']]->setResponse($response);
 				unset($this->_statements[$header['stream']]);
-				$this->_recycledStreams[] = $header['stream'];
+				$this->_recycledStreams->enqueue($header['stream']);
 			}
 			elseif ($response instanceof Response\Event){
 				$this->trigger($response);
@@ -257,11 +258,11 @@ class Connection {
 		if ($this->_lastStreamId < 32767)
 			return ++$this->_lastStreamId;
 		
-		while (empty($this->_recycledStreams)){
+		while ($this->_recycledStreams->isEmpty()){
 			$this->_getResponse();
 		}
 		
-		return array_shift($this->_recycledStreams);
+		return $this->_recycledStreams->dequeue();
 	}
 	
 	/***** Shorthand Methods ******/
