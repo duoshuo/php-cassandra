@@ -1,6 +1,6 @@
 {
 	"name": "duoshuo/php-cassandra",
-	"description": "PHP library for Cassandra database via a binary protocol",
+	"description": "Cassandra client library for PHP, which support Protocol v3 and asynchronous request",
 	"minimum-stability": "stable",
 	"license": "MIT",
 	"authors": [
@@ -17,6 +17,6 @@
 		"php": ">=5.4.0"
 	},
 	"autoload": {
-		"psr-4": { "Cassandra\\": "Cassandra/" }
+		"psr-4": { "Cassandra\\": "src/" }
 	}
 }
