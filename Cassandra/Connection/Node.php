@@ -50,7 +50,7 @@ class Node {
 		socket_set_option($this->socket, getprotobyname('TCP'), TCP_NODELAY, 1);
 		socket_set_option($this->socket, SOL_SOCKET, SO_RCVTIMEO, ["sec" => self::STREAM_TIMEOUT, "usec" => 0]);
 		if (!socket_connect($this->socket, $this->_options['host'], $this->_options['port'])) {
-			throw new Exception("Unable to connect to Cassandra node: {$this->_options[host]}:{$this->_options[port]}");
+			throw new Exception("Unable to connect to Cassandra node: {$this->_options['host']}:{$this->_options['port']}");
 		}
 
 		return $this->socket;
