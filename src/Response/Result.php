@@ -14,6 +14,10 @@ class Result extends Response {
 	const ROWS_FLAG_HAS_MORE_PAGES = 0x0002;
 	const ROWS_FLAG_NO_METADATA = 0x0004;
 	
+	/**
+	 * 
+	 * @var int
+	 */
 	protected $_kind;
 	
 	/**
@@ -197,8 +201,15 @@ class Result extends Response {
 		return $this->_kind;
 	}
 
+	/**
+	 * 
+	 * @param array $metadata
+	 * @return self
+	 */
 	public function setMetadata(array $metadata) {
 		$this->_metadata = $metadata;
+		
+		return $this;
 	}
 	
 	/**

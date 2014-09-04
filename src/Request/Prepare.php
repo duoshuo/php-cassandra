@@ -6,8 +6,16 @@ class Prepare extends Request{
 
 	protected $opcode = Frame::OPCODE_PREPARE;
 	
+	/**
+	 * 
+	 * @var string
+	 */
 	protected $_cql;
 	
+	/**
+	 * 
+	 * @param string $cql
+	 */
 	public function __construct($cql) {
 		$this->_cql = $cql;
 	}

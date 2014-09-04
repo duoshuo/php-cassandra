@@ -7,6 +7,18 @@ class AuthResponse extends Request{
 	protected $opcode = Frame::OPCODE_AUTH_RESPONSE;
 	
 	/**
+	 * 
+	 * @var string
+	 */
+	protected $_username;
+	
+	/**
+	 *
+	 * @var string
+	 */
+	protected $_password;
+	
+	/**
 	 * CREDENTIALS
 	 *
 	 * Provides credentials information for the purpose of identification. This

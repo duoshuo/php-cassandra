@@ -210,7 +210,7 @@ class Connection {
 		}
 		
 		if (!empty($this->keyspace))
-			$this->setKeyspace($this->keyspace);
+			$this->syncRequest(new Request\Query("USE {$this->keyspace};"));
 		
 		return true;
 	}

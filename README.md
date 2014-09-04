@@ -33,7 +33,7 @@ Append dependency into composer.json
 	...
 ```
 
-## Base Using
+## Basic Using
 
 ```php
 <?php
