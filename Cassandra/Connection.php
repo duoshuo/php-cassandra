@@ -18,7 +18,7 @@ class Connection {
 	protected $keyspace;
 
 	/**
-	 * @var array|Iterator
+	 * @var array|\Traversable
 	 */
 	protected $nodes;
 
