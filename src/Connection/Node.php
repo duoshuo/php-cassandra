@@ -3,21 +3,23 @@ namespace Cassandra\Connection;
 
 class Node {
 
-	const STREAM_TIMEOUT = 10;
-
 	/**
 	 * @var resource
 	 */
-	private $socket;
+	protected $socket;
 
 	/**
 	 * @var array
 	 */
-	private $_options = [
-		'host'     => null,
-		'port'     => 9042,
-		'username' => null,
-		'password' => null,
+	protected $_options = [
+		'host'		=> null,
+		'port'		=> 9042,
+		'username'	=> null,
+		'password'	=> null,
+		'socket'	=> [
+			SO_RCVTIMEO => ["sec" => 30, "usec" => 0],
+			SO_SNDTIMEO => ["sec" => 5, "usec" => 0],
+		],
 	];
 
 	/**
@@ -35,23 +37,26 @@ class Node {
 			}
 		}
 		else{
-			$this->_options = array_merge($this->_options, $options);
+			$this->_options = array_merge_recursive($this->_options, $options);
 		}
 	}
 
 	/**
+	 * 
+	 * @throws Exception
 	 * @return resource
-	 * @throws \Exception
 	 */
 	public function getConnection() {
 		if (!empty($this->socket)) return $this->socket;
 
 		$this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
 		socket_set_option($this->socket, getprotobyname('TCP'), TCP_NODELAY, 1);
-		socket_set_option($this->socket, SOL_SOCKET, SO_RCVTIMEO, ["sec" => self::STREAM_TIMEOUT, "usec" => 0]);
-		if (!socket_connect($this->socket, $this->_options['host'], $this->_options['port'])) {
+		
+		foreach($this->_options['socket'] as $optname => $optval)
+			socket_set_option($this->socket, SOL_SOCKET, $optname, $optval);
+		
+		if (!socket_connect($this->socket, $this->_options['host'], $this->_options['port']))
 			throw new Exception("Unable to connect to Cassandra node: {$this->_options['host']}:{$this->_options['port']}");
-		}
 
 		return $this->socket;
 	}

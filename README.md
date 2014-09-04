@@ -1,18 +1,22 @@
-PHP library for Cassandra
-=========================
+Cassandra client library for PHP 
+================================
 
 <a href="https://codeclimate.com/github/duoshuo/php-cassandra/"><img src="https://codeclimate.com/github/duoshuo/php-cassandra.png" /></a>
 <a href="https://scrutinizer-ci.com/g/duoshuo/php-cassandra/"><img src="https://scrutinizer-ci.com/g/duoshuo/php-cassandra/badges/quality-score.png?b=master" /></a>
 <a href="https://scrutinizer-ci.com/g/duoshuo/php-cassandra/"><img src="https://scrutinizer-ci.com/g/duoshuo/php-cassandra/badges/build.png?b=master" /></a>
 
-Cassandra client library for PHP, using the native binary protocol.
+Cassandra client library for PHP, which support Protocol v3 and asynchronous request 
 
 ## Features
-* Using v3 protocol
+* Using Protocol v3
+* Support asynchronous and synchronous request
 * Support for logged, unlogged and counter batches
-* The ability to specify the consistency and serial consistency
-* Automatic query preparation
-* Support for conditional update/insert
+* The ability to specify the consistency, "serial consistency" and all flags defined in the protocol
+* Support Query preparation and execute
+* Support all data types convertion and binding
+* Support conditional update/insert
+* 4 fetch methods (fetchAll, fetchRow, fetchCol, fetchOne)
+* 800% performance improvement(async mode) than other php cassandra client libraries
 
 ## Installation
 
@@ -57,31 +61,32 @@ $response = $connection->querySync(
 ## Fetch Data
 
 ```php
-// Return a SplFixedArray containing all of the result set rows.
+// Return a SplFixedArray containing all of the result set.
 $rows = $response->fetchAll();
 
-// Return a SplFixedArray containing a specified index column from the result set rows.
+// Return a SplFixedArray containing a specified index column from the result set.
 $col = $response->fetchCol();
 
-// Return the first row of the result set rows.
+// Return the first row of the result set.
 $row = $response->fetchRow();
 
-// Return the first column of the first row of the result set rows.
-$data = $response->fetchOne();
+// Return the first column of the first row of the result set.
+$value = $response->fetchOne();
 ```
 
 ## Query Asynchronously
 
 ```php
-// Return a statement.
+// Return a statement immediately
 $statement = $connection->queryAsync($cql);
 
+// Wait until received the response
 $response = $statement->getResponse();
 
 $rows = $response->fetchAll();
 ```
 
-## Using Preparation
+## Using preparation and data binding
 
 ```php
 $preparedData = $connection->prepare('SELECT * FROM "users" WHERE "id" = :id');
