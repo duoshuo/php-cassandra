@@ -38,40 +38,41 @@ Append dependency into composer.json
 ```php
 <?php
 
-$nodes = array(
-	array (
-		'host' => '10.205.48.70',
-		'port' => 9042,
-		'username' => 'admin',
-		'password' => 'pass',
-	),
-	'127.0.0.1',
-);
+$nodes = [
+	'127.0.0.1',		// simple way, hostname only
+	'192.168.0.2:9160',	// simple way, hostname with port 
+	[				// advanced way, array including username, password and socket option
+		'host'		=> '10.205.48.70',
+		'port'		=> 9042,
+		'username'	=> 'admin',
+		'password'	=> 'pass',
+		'socket'	=> [
+			SO_RCVTIMEO => ["sec" => 10, "usec" => 0],
+		],
+	],
+];
 
 // Create a connection.
 $connection = new Cassandra\Connection($nodes, 'my_keyspace');
 
 // Run query synchronously.
-$response = $connection->querySync(
-	'SELECT * FROM "users" WHERE "id" = :id',
-	['id' => new Cassandra\Type\Uuid('c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc')],
-);
+$response = $connection->querySync('SELECT * FROM "users" WHERE "id" = ?', [new Cassandra\Type\Uuid('c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc')]);
 ```
 
 ## Fetch Data
 
 ```php
 // Return a SplFixedArray containing all of the result set.
-$rows = $response->fetchAll();
+$rows = $response->fetchAll();		// SplFixedArray
 
 // Return a SplFixedArray containing a specified index column from the result set.
-$col = $response->fetchCol();
+$col = $response->fetchCol();		// SplFixedArray
 
 // Return the first row of the result set.
-$row = $response->fetchRow();
+$row = $response->fetchRow();		// ArrayObject
 
 // Return the first column of the first row of the result set.
-$value = $response->fetchOne();
+$value = $response->fetchOne();		// mixed
 ```
 
 ## Query Asynchronously
@@ -116,8 +117,8 @@ $rows = $response->fetchAll();
 ## Using Batch
 
 ```php
-$batch = (new Cassandra\Request\Batch())
-	->appendQueryId($preparedData['id'], $strictValues)
+$batchRequest = new Cassandra\Request\Batch();
+$batchRequest->appendQueryId($preparedData['id'], $strictValues)
 	->appendQuery(
 		'INSERT INTO "students" ("id", "name", "age") VALUES (:id, :name, :age)',
 		[
@@ -135,41 +136,79 @@ $rows = $response->fetchAll();
 
 All types are supported.
 
-* *Cassandra\Type\Ascii*
-  e.g., new Cassandra\Type\Ascii('string')
-* *Cassandra\Type\Bigint*
-  e.g., new Cassandra\Type\Bigint(10000000000)
-* *Cassandra\Type\Blob*
-  e.g., new Cassandra\Type\Blob('string')
-* *Cassandra\Type\Boolean*
-  e.g., new Cassandra\Type\Boolean(true)
-* *Cassandra\Type\Counter*
-  e.g., new Cassandra\Type\Counter(1000)
-* *Cassandra\Type\Decimal*
-  e.g., new Cassandra\Type\Decimal('2.718281828459')
-* *Cassandra\Type\Double*
-  e.g., new Cassandra\Type\Double(2.718281828459)
-* *Cassandra\Type\Float*
-  e.g., new Cassandra\Type\Float(2.718)
-* *Cassandra\Type\Inet*
-  e.g., new Cassandra\Type\Inet('127.0.0.1')
-* *Cassandra\Type\Int*
-  e.g., new Cassandra\Type\Int(1)
-* *Cassandra\Type\CollectionList*
-  e.g., new Cassandra\Type\CollectionList([1, 1, 1], Cassandra\Type\Base::INT)
-* *Cassandra\Type\CollectionMap*
-  e.g., new Cassandra\Type\CollectionMap(['a' => 1, 'b' => 2], Cassandra\Type\Base::ASCII, Cassandra\Type\Base::INT)
-* *Cassandra\Type\CollectionSet*
-  e.g., new Cassandra\Type\CollectionSet([1, 2, 3], Cassandra\Type\Base::INT)
-* *Cassandra\Type\Timestamp*
-  e.g., new Cassandra\Type\Timestamp(1409830696263)
-* *Cassandra\Type\Uuid*
-  e.g., new Cassandra\Type\Uuid('62c36092-82a1-3a00-93d1-46196ee77204')
-* *Cassandra\Type\Timeuuid*
-  e.g., new Cassandra\Type\Timeuuid('2dc65ebe-300b-11e4-a23b-ab416c39d509')
-* *Cassandra\Type\Varchar*
-  e.g., new Cassandra\Type\Varchar('string')
-* *Cassandra\Type\Varint*
-  e.g., new Cassandra\Type\Varint(10000000000)
-* *Cassandra\Type\Custom*
-  e.g., new Cassandra\Type\Custom('string')
+* **Cassandra\Type\Ascii**
+```php
+    new Cassandra\Type\Ascii('string')
+```
+* **Cassandra\Type\Bigint**
+```php
+    new Cassandra\Type\Bigint(10000000000)
+```
+* **Cassandra\Type\Blob**
+```php
+    new Cassandra\Type\Blob('string')
+```
+* **Cassandra\Type\Boolean**
+```php
+    new Cassandra\Type\Boolean(true)
+```
+* **Cassandra\Type\Counter**
+```php
+    new Cassandra\Type\Counter(1000)
+```
+* **Cassandra\Type\Decimal**
+```php
+    new Cassandra\Type\Decimal('2.718281828459')
+```
+* **Cassandra\Type\Double**
+```php
+    new Cassandra\Type\Double(2.718281828459)
+```
+* **Cassandra\Type\Float**
+```php
+    new Cassandra\Type\Float(2.718)
+```
+* **Cassandra\Type\Inet**
+```php
+    new Cassandra\Type\Inet('127.0.0.1')
+```
+* **Cassandra\Type\Int**
+```php
+    new Cassandra\Type\Int(1)
+```
+* **Cassandra\Type\CollectionList**
+```php
+    new Cassandra\Type\CollectionList([1, 1, 1], Cassandra\Type\Base::INT)
+```
+* **Cassandra\Type\CollectionMap**
+```php
+    new Cassandra\Type\CollectionMap(['a' => 1, 'b' => 2], Cassandra\Type\Base::ASCII, Cassandra\Type\Base::INT)
+```
+* **Cassandra\Type\CollectionSet**
+```php
+    new Cassandra\Type\CollectionSet([1, 2, 3], Cassandra\Type\Base::INT)
+```
+* **Cassandra\Type\Timestamp**
+```php
+    new Cassandra\Type\Timestamp(1409830696263)
+```
+* **Cassandra\Type\Uuid**
+```php
+    new Cassandra\Type\Uuid('62c36092-82a1-3a00-93d1-46196ee77204')
+```
+* **Cassandra\Type\Timeuuid**
+```php
+    new Cassandra\Type\Timeuuid('2dc65ebe-300b-11e4-a23b-ab416c39d509')
+```
+* **Cassandra\Type\Varchar**
+```php
+    new Cassandra\Type\Varchar('string')
+```
+* **Cassandra\Type\Varint**
+```php
+    new Cassandra\Type\Varint(10000000000)
+```
+* **Cassandra\Type\Custom**
+```php
+    new Cassandra\Type\Custom('string')
+```
