@@ -1,5 +1,5 @@
 {
-	"name": "shen2/php-cassandra",
+	"name": "duoshuo/php-cassandra",
 	"description": "PHP library for Cassandra database via a binary protocol",
 	"minimum-stability": "stable",
 	"license": "MIT",
