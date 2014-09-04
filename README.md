@@ -58,29 +58,27 @@ $response = $connection->querySync(
 
 ```php
 // Return a SplFixedArray containing all of the result set rows.
-$response->fetchAll();
+$rows = $response->fetchAll();
 
-// Return a single column from the next row of a result set.
-$response->fetchCol();
+// Return a SplFixedArray containing a specified index column from the result set rows.
+$col = $response->fetchCol();
 
-// Fetche the next row from a result set.
-$response->fetchRow();
+// Return the first row of the result set rows.
+$row = $response->fetchRow();
 
-// Retrieve the next row of a query result set and return a single sequence.
-$response->fetchOne();
+// Return the first column of the first row of the result set rows.
+$data = $response->fetchOne();
 ```
 
 ## Query Asynchronously
 
 ```php
-$statements = array();
-
 // Return a statement.
-for ($i = 0; $i < 100; ++$i)
-	$statements[$i] = $connection->queryAsync($cql);
+$statement = $connection->queryAsync($cql);
 
-for ($i = 0; $i < 100; ++$i)
-	$statements[$i]->getResponse();
+$response = $statement->getResponse();
+
+$rows = $response->fetchAll();
 ```
 
 ## Using Preparation
@@ -107,49 +105,66 @@ $response = $connection->executeSync(
 );
 
 $response->setMetadata($preparedData['result_metadata']);
-$response->fetchAll();
+$rows = $response->fetchAll();
 ```
 
 ## Using Batch
 
 ```php
-$batch = new Cassandra\Request\Batch();
+$batch = (new Cassandra\Request\Batch())
+	->appendQueryId($preparedData['id'], $strictValues)
+	->appendQuery(
+		'INSERT INTO "students" ("id", "name", "age") VALUES (:id, :name, :age)',
+		[
+			'id' => new Cassandra\Type\Uuid('c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc'),
+			'name' => new Cassandra\Type\Varchar('Mark'),
+			'age' => 20,
+		]
+	);
 
-$batch->appendQueryId($preparedData['id'], $strictValues);
-
-$batch->appendQuery(
-	'INSERT INTO "students" ("id", "name", "age") VALUES (:id, :name, :age)',
-	[
-		'id' => new Cassandra\Type\Uuid('c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc'),
-		'name' => new Cassandra\Type\Varchar('Mark'),
-		'age' => 20,
-	]
-);
-
-$connection->syncRequest($batch);
+$response = $connection->syncRequest($batch);
+$rows = $response->fetchAll();
 ```
 
 ## Supported datatypes
 
 All types are supported.
 
-* *ascii, varchar, text*
-  Result will be a string.
-* *bigint, counter, varint*
-  Converted to strings using bcmath.
-* *blob*
-  Result will be a string.
-* *boolean*
-  Result will be a boolean as well.
-* *decimal*
-  Converted to strings using bcmath.
-* *double, float, int*
-  Result is using native PHP datatypes.
-* *timestamp*
-  Converted to integer. Milliseconds precision is lost.
-* *uuid, timeuuid, inet*
-  No native PHP datatype available. Converted to strings.
-* *list, set*
-  Converted to array (numeric keys).
-* *map*
-  Converted to keyed array.
+* *Cassandra\Type\Ascii*
+  e.g., new Cassandra\Type\Ascii('string')
+* *Cassandra\Type\Bigint*
+  e.g., new Cassandra\Type\Bigint(10000000000)
+* *Cassandra\Type\Blob*
+  e.g., new Cassandra\Type\Blob('string')
+* *Cassandra\Type\Boolean*
+  e.g., new Cassandra\Type\Boolean(true)
+* *Cassandra\Type\Counter*
+  e.g., new Cassandra\Type\Counter(1000)
+* *Cassandra\Type\Decimal*
+  e.g., new Cassandra\Type\Decimal('2.718281828459')
+* *Cassandra\Type\Double*
+  e.g., new Cassandra\Type\Double(2.718281828459)
+* *Cassandra\Type\Float*
+  e.g., new Cassandra\Type\Float(2.718)
+* *Cassandra\Type\Inet*
+  e.g., new Cassandra\Type\Inet('127.0.0.1')
+* *Cassandra\Type\Int*
+  e.g., new Cassandra\Type\Int(1)
+* *Cassandra\Type\CollectionList*
+  e.g., new Cassandra\Type\CollectionList([1, 1, 1], Cassandra\Type\Base::INT)
+* *Cassandra\Type\CollectionMap*
+  e.g., new Cassandra\Type\CollectionMap(['a' => 1, 'b' => 2], Cassandra\Type\Base::ASCII, Cassandra\Type\Base::INT)
+* *Cassandra\Type\CollectionSet*
+  e.g., new Cassandra\Type\CollectionSet([1, 2, 3], Cassandra\Type\Base::INT)
+* *Cassandra\Type\Timestamp*
+  e.g., new Cassandra\Type\Timestamp(1409830696263)
+* *Cassandra\Type\Uuid*
+  e.g., new Cassandra\Type\Uuid('62c36092-82a1-3a00-93d1-46196ee77204')
+* *Cassandra\Type\Timeuuid*
+  e.g., new Cassandra\Type\Timeuuid('2dc65ebe-300b-11e4-a23b-ab416c39d509')
+* *Cassandra\Type\Varchar*
+  e.g., new Cassandra\Type\Varchar('string')
+* *Cassandra\Type\Varint*
+  e.g., new Cassandra\Type\Varint(10000000000)
+* *Cassandra\Type\Custom*
+  e.g., new Cassandra\Type\Custom('string')

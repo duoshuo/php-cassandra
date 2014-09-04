@@ -14,9 +14,9 @@ class Execute extends Request{
 	
 	/**
 	 * 
-	 * @var array
+	 * @var int
 	 */
-	protected $_columns;
+	protected $_consistency;
 	
 	/**
 	 * 
