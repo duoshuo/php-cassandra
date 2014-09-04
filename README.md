@@ -1,9 +1,9 @@
 PHP library for Cassandra
 =========================
 
-<a href="https://codeclimate.com/github/evseevnn/php-cassandra-binary"><img src="https://codeclimate.com/github/evseevnn/php-cassandra-binary.png" /></a>
-<a href="https://scrutinizer-ci.com/g/evseevnn/php-cassandra-binary/"><img src="https://scrutinizer-ci.com/g/evseevnn/php-cassandra-binary/badges/quality-score.png?b=master" /></a>
-<a href="https://scrutinizer-ci.com/g/evseevnn/php-cassandra-binary/"><img src="https://scrutinizer-ci.com/g/evseevnn/php-cassandra-binary/badges/build.png?b=master" /></a>
+<a href="https://codeclimate.com/github/duoshuo/php-cassandra/"><img src="https://codeclimate.com/github/duoshuo/php-cassandra.png" /></a>
+<a href="https://scrutinizer-ci.com/g/duoshuo/php-cassandra/"><img src="https://scrutinizer-ci.com/g/duoshuo/php-cassandra/badges/quality-score.png?b=master" /></a>
+<a href="https://scrutinizer-ci.com/g/duoshuo/php-cassandra/"><img src="https://scrutinizer-ci.com/g/duoshuo/php-cassandra/badges/build.png?b=master" /></a>
 
 Cassandra client library for PHP, using the native binary protocol.
 
@@ -24,7 +24,7 @@ Append dependency into composer.json
 	...
 	"require": {
 		...
-		"evseevnn/php-cassandra-binary": "dev-master"
+		"duoshuo/php-cassandra": "dev-master"
 	}
 	...
 ```
@@ -34,13 +34,15 @@ Append dependency into composer.json
 ```php
 <?php
 
-$nodes = [
-	'127.0.0.1',
-	'192.168.0.2:8882' => [
+$nodes = array(
+	array (
+		'host' => '10.205.48.70',
+		'port' => 9042,
 		'username' => 'admin',
-		'password' => 'pass'
-	]
-];
+		'password' => 'pass',
+	),
+	'127.0.0.1',
+);
 
 // Create a connection.
 $connection = new Cassandra\Connection($nodes, 'my_keyspace');
@@ -48,59 +50,81 @@ $connection = new Cassandra\Connection($nodes, 'my_keyspace');
 // Run query synchronously.
 $response = $connection->querySync(
 	'SELECT * FROM "users" WHERE "id" = :id',
-	['id' => new Cassandra\Type\Uuid('c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc')]
-);
-
-// Fetch data methods
-$response->fetchAll();
-$response->fetchCol();
-$response->fetchRow();
-$response->fetchOne();
-
-// Specify the consistency and optionas.
-$response = $connection->querySync(
-	'SELECT * FROM "users" WHERE "id" = :id',
 	['id' => new Cassandra\Type\Uuid('c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc')],
-	Cassandra\Request\Request::CONSISTENCY_QUORUM,
-	[
-		'page_size' => 100,
-		'names_for_values' => true,
-		'default_timestamp' => 1409670248663725,
-	]
 );
+```
 
-// Run query asynchronously.
-$statement = $connection->queryAsync('SELECT * FROM "users"');
-$statement->getResponse();
+## Fetch Data
 
-// Keyspace can be changed at runtime
-$connection->setKeyspace('my_other_keyspace');
+```php
+// Return a SplFixedArray containing all of the result set rows.
+$response->fetchAll();
 
+// Return a single column from the next row of a result set.
+$response->fetchCol();
+
+// Fetche the next row from a result set.
+$response->fetchRow();
+
+// Retrieve the next row of a query result set and return a single sequence.
+$response->fetchOne();
+```
+
+## Query Asynchronously
+
+```php
+$statements = array();
+
+// Return a statement.
+for ($i = 0; $i < 100; ++$i)
+	$statements[$i] = $connection->queryAsync($cql);
+
+for ($i = 0; $i < 100; ++$i)
+	$statements[$i]->getResponse();
 ```
 
 ## Using Preparation
 
 ```php
-$preparedData = $connection->prepare('INSERT INTO "users" ("id", "name", "email") VALUES (:id, :name, :email)');
+$preparedData = $connection->prepare('SELECT * FROM "users" WHERE "id" = :id');
 
 $strictValues = Cassandra\Request\Request::strictTypeValues(
 	[
 		'id' => 'c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc',
-		'name' => 'Mark',
-		'email' => 'mark@facebook.com',
 	],
-	$preparedData['metadata']
+	$preparedData['metadata']['columns']
 );
 
-$connection->executeSync($preparedData['id'], $strictValues);
+$response = $connection->executeSync(
+	$preparedData['id'],
+	$strictValues,
+	Cassandra\Request\Request::CONSISTENCY_QUORUM,
+	[
+		'page_size' => 100,
+		'names_for_values' => true,
+		'skip_metadata' => true,
+	]
+);
+
+$response->setMetadata($preparedData['result_metadata']);
+$response->fetchAll();
 ```
 
 ## Using Batch
 
 ```php
-$batch = new Cassandra\Result\Batch();
+$batch = new Cassandra\Request\Batch();
 
 $batch->appendQueryId($preparedData['id'], $strictValues);
+
+$batch->appendQuery(
+	'INSERT INTO "students" ("id", "name", "age") VALUES (:id, :name, :age)',
+	[
+		'id' => new Cassandra\Type\Uuid('c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc'),
+		'name' => new Cassandra\Type\Varchar('Mark'),
+		'age' => 20,
+	]
+);
 
 $connection->syncRequest($batch);
 ```
