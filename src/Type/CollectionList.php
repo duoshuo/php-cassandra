@@ -18,13 +18,13 @@ class CollectionList extends Base{
 	public function __construct($value, $valueType) {
 		if ((array)$values !== $values) throw new Exception('Incoming value must be of type array.');
 		
-		$this->value = $value;
+		$this->_value = $value;
 		$this->_valueType = $valueType;
 	}
 	
 	public function getBinary(){
-		$data = pack('n', count($this->value));
-		foreach($this->value as $value) {
+		$data = pack('n', count($this->_value));
+		foreach($this->_value as $value) {
 			$itemPacked = Base::getTypeObject($this->_valueType, $value)->getBinary();
 			$data .= pack('n', strlen($itemPacked)) . $itemPacked;
 		}

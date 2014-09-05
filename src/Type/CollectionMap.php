@@ -24,14 +24,14 @@ class CollectionMap extends Base{
 		if ((array)$value !== $value)
 			throw new Exception('Incoming value must be of type array.');
 		
-		$this->value = $value;
+		$this->_value = $value;
 		$this->_keyType = $keyType;
 		$this->_valueType = $valueType;
 	}
 	
 	public function getBinary(){
-		$data = pack('n', count($this->value));
-		foreach($this->value as $key => $value) {
+		$data = pack('n', count($this->_value));
+		foreach($this->_value as $key => $value) {
 			$keyPacked = Base::getTypeObject($this->_keyType, $key)->getBinary();
 			$data .= pack('n', strlen($keyPacked)) . $keyPacked;
 			$valuePacked = Base::getTypeObject($this->_valueType, $value)->getBinary();

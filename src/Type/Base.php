@@ -26,7 +26,19 @@ abstract class Base{
 	const UDT = 0x0030;
 	const TUPLE = 0x0031;
 	
+	/**
+	 * 
+	 * @var mixed
+	 */
 	protected $_value;
+	
+	/**
+	 * 
+	 * @param mixed $value
+	 */
+	public function __construct($value){
+		$this->_value = $value;
+	}
 	
 	/**
 	 * @return string

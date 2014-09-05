@@ -17,7 +17,7 @@ class Custom extends Blob{
 	public function __construct($value, $name){
 		if (!is_string($value)) throw new Exception('Incoming value must be of type string.');
 	
-		$this->value = $value;
+		$this->_value = $value;
 		$this->_name = $name;
 	}
 }
