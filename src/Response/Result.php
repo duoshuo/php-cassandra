@@ -25,6 +25,12 @@ class Result extends Response {
 	 * @var array
 	 */
 	protected $_metadata;
+	
+	/**
+	 * 
+	 * @var string
+	 */
+	protected $_rowClass = 'ArrayObject';
 
 	/**
 	 * read a [bytes] and read by type
@@ -213,6 +219,17 @@ class Result extends Response {
 	}
 	
 	/**
+	 * 
+	 * @param string $rowClass
+	 * @return self
+	 */
+	public function setRowClass($rowClass) {
+		$this->_rowClass = $rowClass;
+	
+		return $this;
+	}
+	
+	/**
 	 * Return metadata
 	 * @return array
 	 */
@@ -263,7 +280,7 @@ class Result extends Response {
 	 * @throws Exception
 	 * @return \SplFixedArray
 	 */
-	public function fetchAll($rowClass = 'ArrayObject'){
+	public function fetchAll($rowClass = null){
 		if ($this->getKind() !== self::ROWS){
 			throw new Exception('Unexpected Response: ' . $this->getKind());
 		}
@@ -280,6 +297,9 @@ class Result extends Response {
 		$rowCount = parent::readInt();
 		$rows = new \SplFixedArray($rowCount);
 		$rows->metadata = $metadata;
+		
+		if ($rowClass === null)
+			$rowClass = $this->_rowClass;
 	
 		for ($i = 0; $i < $rowCount; ++$i) {
 			$row = new $rowClass();
@@ -335,7 +355,7 @@ class Result extends Response {
 	 * @throws Exception
 	 * @return \ArrayObject
 	 */
-	public function fetchRow($rowClass = 'ArrayObject'){
+	public function fetchRow($rowClass = null){
 		if ($this->getKind() !== self::ROWS){
 			throw new Exception('Unexpected Response: ' . $this->getKind());
 		}
@@ -354,6 +374,9 @@ class Result extends Response {
 		if ($rowCount === 0)
 			return null;
 	
+		if ($rowClass === null)
+			$rowClass = $this->_rowClass;
+		
 		$row = new $rowClass();
 		foreach ($columns as $column)
 			$row[$column['name']] = $this->_readBytesAndConvertToType($column['type']);
