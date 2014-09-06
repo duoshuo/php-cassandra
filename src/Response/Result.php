@@ -30,7 +30,7 @@ class Result extends Response {
 	 * 
 	 * @var string
 	 */
-	protected $_rowClass = 'ArrayObject';
+	protected $_rowClass;
 
 	/**
 	 * read a [bytes] and read by type
@@ -241,34 +241,31 @@ class Result extends Response {
 			$metadata['page_state'] = parent::readBytes();
 
 		if (!($flags & self::ROWS_FLAG_NO_METADATA)) {
+			$metadata['columns'] = [];
+			
 			if ($flags & self::ROWS_FLAG_GLOBAL_TABLES_SPEC) {
 				$keyspace = $this->read(unpack('n', $this->read(2))[1]);
 				$tableName = $this->read(unpack('n', $this->read(2))[1]);
 
-				$columns = [];
 				for ($i = 0; $i < $metadata['columns_count']; ++$i) {
-					$columnData = [
+					$metadata['columns'][] = [
 						'keyspace' => $keyspace,
 						'tableName' => $tableName,
 						'name' => $this->read(unpack('n', $this->read(2))[1]),
 						'type' => self::readType()
 					];
-					$columns[] = $columnData;
 				}
 			}
 			else {
-				$columns = [];
 				for ($i = 0; $i < $metadata['columns_count']; ++$i) {
-					$columnData = [
+					$metadata['columns'][] = [
 						'keyspace' => $this->read(unpack('n', $this->read(2))[1]),
 						'tableName' => $this->read(unpack('n', $this->read(2))[1]),
 						'name' => $this->read(unpack('n', $this->read(2))[1]),
 						'type' => self::readType()
 					];
-					$columns[] = $columnData;
 				}
 			}
-			$metadata['columns'] = $columns;
 		}
 	
 		return $metadata;
@@ -302,12 +299,12 @@ class Result extends Response {
 			$rowClass = $this->_rowClass;
 	
 		for ($i = 0; $i < $rowCount; ++$i) {
-			$row = new $rowClass();
+			$data = [];
 	
 			foreach ($columns as $column)
-				$row[$column['name']] = $this->_readBytesAndConvertToType($column['type']);
+				$data[$column['name']] = $this->_readBytesAndConvertToType($column['type']);
 				
-			$rows[$i] = $row;
+			$rows[$i] = $rowClass === null ? $data : new $rowClass($data);
 		}
 	
 		return $rows;
@@ -377,11 +374,11 @@ class Result extends Response {
 		if ($rowClass === null)
 			$rowClass = $this->_rowClass;
 		
-		$row = new $rowClass();
+		$data = [];
 		foreach ($columns as $column)
-			$row[$column['name']] = $this->_readBytesAndConvertToType($column['type']);
+			$data[$column['name']] = $this->_readBytesAndConvertToType($column['type']);
 	
-		return $row;
+		return $rowClass === null ? $data : new $rowClass($data);
 	}
 	
 	/**
