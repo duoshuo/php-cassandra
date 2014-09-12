@@ -131,6 +131,7 @@ class Connection {
 	/**
 	 * 
 	 * @param int $streamId
+	 * @throws Response\Exception
 	 * @return Response\Response
 	 */
 	public function getResponse($streamId = 0){
@@ -155,7 +156,7 @@ class Connection {
 			$body = '';
 		}
 		
-		static $responseClassMap = array(
+		static $responseClassMap = [
 			Frame::OPCODE_ERROR			=> 'Cassandra\Response\Error',
 			Frame::OPCODE_READY			=> 'Cassandra\Response\Ready',
 			Frame::OPCODE_AUTHENTICATE	=> 'Cassandra\Response\Authenticate',
@@ -163,7 +164,7 @@ class Connection {
 			Frame::OPCODE_RESULT		=> 'Cassandra\Response\Result',
 			Frame::OPCODE_EVENT			=> 'Cassandra\Response\Event',
 			Frame::OPCODE_AUTH_SUCCESS	=> 'Cassandra\Response\AuthSuccess',
-		);
+		];
 		
 		if (!isset($responseClassMap[$header['opcode']]))
 			throw new Response\Exception('Unknown response');
@@ -218,6 +219,7 @@ class Connection {
 
 	/**
 	 * @param Request\Request $request
+	 * @throws Exception
 	 * @return Response\Response
 	 */
 	public function syncRequest(Request\Request $request) {
@@ -269,6 +271,7 @@ class Connection {
 	/**
 	 * 
 	 * @param string $cql
+	 * @throws Exception
 	 * @return array
 	 */
 	public function prepare($cql) {
@@ -283,6 +286,7 @@ class Connection {
 	 * @param array $values
 	 * @param int $consistency
 	 * @param array $options
+	 * @throws Exception
 	 * @return Response\Response
 	 */
 	public function executeSync($queryId, array $values = [], $consistency = null, array $options = []){
@@ -297,6 +301,7 @@ class Connection {
 	 * @param array $values
 	 * @param int $consistency
 	 * @param array $options
+	 * @throws Exception
 	 * @return Statement
 	 */
 	public function executeAsync($queryId, array $values = [], $consistency = null, array $options = []){
@@ -311,6 +316,7 @@ class Connection {
 	 * @param array $values
 	 * @param int $consistency
 	 * @param array $options
+	 * @throws Exception
 	 * @return Response\Response
 	 */
 	public function querySync($cql, array $values = [], $consistency = null, array $options = []){

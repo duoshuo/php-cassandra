@@ -194,3 +194,11 @@ All types are supported.
 //  Custom
     new Cassandra\Type\Custom('string');
 ```
+
+## Recommend Libraries
+* [shen2/fluent-cql](https://github.com/shen2/FluentCQL): write CQL in fluent interface
+* [duoshuo/uuid](https://github.com/duoshuo/uuid): generate UUID and TimeUUID
+
+## Inspired by
+* [mauritsl/php-cassandra](https://github.com/mauritsl/php-cassandra)
+* [evseevnn/php-cassandra-binary](https://github.com/evseevnn/php-cassandra-binary)

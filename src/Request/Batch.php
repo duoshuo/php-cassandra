@@ -61,7 +61,7 @@ class Batch extends Request{
 	 * @param array $values
 	 * @return self
 	 */
-	public function appendQuery($cql, array $values = array()) {
+	public function appendQuery($cql, array $values = []) {
 		$binary = pack('C', 0);
 	
 		$binary .= pack('N', strlen($cql)) . $cql;
@@ -78,7 +78,7 @@ class Batch extends Request{
 	 * @param array $values
 	 * @return self
 	 */
-	public function appendQueryId($queryId, array $values = array()) {
+	public function appendQueryId($queryId, array $values = []) {
 		$binary = pack('C', 1);
 		
 		$binary .= pack('n', strlen($queryId)) . $queryId;

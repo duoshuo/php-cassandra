@@ -51,7 +51,7 @@ class Execute extends Request{
 	 * @param int $consistency
 	 * @param array $options
 	 */
-	public function __construct($queryId, array $values, $consistency = null, $options = array()) {
+	public function __construct($queryId, array $values, $consistency = null, $options = []) {
 		$this->_queryId = $queryId;
 		$this->_values = $values;
 		 

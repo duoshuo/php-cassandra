@@ -116,7 +116,7 @@ trait StreamReader {
 	 * @return array
 	 */
 	public function readList($valueType) {
-		$list = array();
+		$list = [];
 		$count = $this->readShort();
 		for ($i = 0; $i < $count; ++$i) {
 			$list[] = $this->readByType($valueType);
@@ -132,7 +132,7 @@ trait StreamReader {
 	 * @return array
 	 */
 	public function readMap($keyType, $valueType) {
-		$map = array();
+		$map = [];
 		$count = $this->readShort();
 		for ($i = 0; $i < $count; ++$i) {
 			$map[$this->readByType($keyType, true)] = $this->readByType($valueType, true);
@@ -199,13 +199,13 @@ trait StreamReader {
 	}
 	
 	public function readStringMultimap(){
-		$map = array();
+		$map = [];
 		$count = $this->readShort();
 		for($i = 0; $i < $count; $i++){
 			$key = $this->readString();
 				
 			$listLength = $this->readShort();
-			$list = array();
+			$list = [];
 			for($j = 0; $j < $listLength; $j++)
 				$list[] = $this->readString();
 					
