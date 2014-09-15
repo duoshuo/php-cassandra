@@ -282,18 +282,13 @@ class Result extends Response {
 			throw new Exception('Unexpected Response: ' . $this->getKind());
 		}
 		$this->offset = 4;
-		$metadata = $this->_readMetadata();
+		$this->_metadata = $this->_metadata ? array_merge($this->_metadata, $this->_readMetadata()) : $this->_readMetadata();
 
-		if (isset($metadata['columns']))
-			$columns = $metadata['columns'];
-		elseif(isset($this->_metadata['columns']))
-			$columns = $this->_metadata['columns'];
-		else
+		if (!isset($this->_metadata['columns']))
 			throw new Exception('Missing Result Metadata');
 
 		$rowCount = parent::readInt();
 		$rows = new \SplFixedArray($rowCount);
-		$rows->metadata = $metadata;
 		
 		if ($rowClass === null)
 			$rowClass = $this->_rowClass;
@@ -301,7 +296,7 @@ class Result extends Response {
 		for ($i = 0; $i < $rowCount; ++$i) {
 			$data = [];
 	
-			foreach ($columns as $column)
+			foreach ($this->_metadata['columns'] as $column)
 				$data[$column['name']] = $this->_readBytesAndConvertToType($column['type']);
 				
 			$rows[$i] = $rowClass === null ? $data : new $rowClass($data);
@@ -321,13 +316,9 @@ class Result extends Response {
 			throw new Exception('Unexpected Response: ' . $this->getKind());
 		}
 		$this->offset = 4;
-		$metadata = $this->_readMetadata();
+		$this->_metadata = $this->_metadata ? array_merge($this->_metadata, $this->_readMetadata()) : $this->_readMetadata();
 
-		if (isset($metadata['columns']))
-			$columns = $metadata['columns'];
-		elseif(isset($this->_metadata['columns']))
-			$columns = $this->_metadata['columns'];
-		else
+		if (!isset($this->_metadata['columns']))
 			throw new Exception('Missing Result Metadata');
 
 		$rowCount = parent::readInt();
@@ -347,6 +338,41 @@ class Result extends Response {
 	}
 	
 	/**
+	 * 
+	 * @throws Exception
+	 * @return array
+	 */
+	public function fetchPairs(){
+		if ($this->getKind() !== self::ROWS){
+			throw new Exception('Unexpected Response: ' . $this->getKind());
+		}
+		$this->offset = 4;
+		$this->_metadata = $this->_metadata ? array_merge($this->_metadata, $this->_readMetadata()) : $this->_readMetadata();
+	
+		if (!isset($this->_metadata['columns']))
+			throw new Exception('Missing Result Metadata');
+	
+		$rowCount = parent::readInt();
+	
+		$map = [];
+	
+		for($i = 0; $i < $rowCount; ++$i){
+			foreach($this->_metadata['columns'] as $j => $column){
+				$value = $this->_readBytesAndConvertToType($column['type']);
+	
+				if ($j === 0){
+					$key = $value;
+				}
+				elseif($j === 1){
+					$map[$key] = $value;
+				}
+			}
+		}
+	
+		return $map;
+	}
+	
+	/**
 	 *
 	 * @param string $rowClass
 	 * @throws Exception
@@ -357,13 +383,9 @@ class Result extends Response {
 			throw new Exception('Unexpected Response: ' . $this->getKind());
 		}
 		$this->offset = 4;
-		$metadata = $this->_readMetadata();
+		$this->_metadata = $this->_metadata ? array_merge($this->_metadata, $this->_readMetadata()) : $this->_readMetadata();
 
-		if (isset($metadata['columns']))
-			$columns = $metadata['columns'];
-		elseif(isset($this->_metadata['columns']))
-			$columns = $this->_metadata['columns'];
-		else
+		if (!isset($this->_metadata['columns']))
 			throw new Exception('Missing Result Metadata');
 
 		$rowCount = parent::readInt();
@@ -375,7 +397,7 @@ class Result extends Response {
 			$rowClass = $this->_rowClass;
 		
 		$data = [];
-		foreach ($columns as $column)
+		foreach ($this->_metadata['columns'] as $column)
 			$data[$column['name']] = $this->_readBytesAndConvertToType($column['type']);
 	
 		return $rowClass === null ? $data : new $rowClass($data);
@@ -391,13 +413,9 @@ class Result extends Response {
 			throw new Exception('Unexpected Response: ' . $this->getKind());
 		}
 		$this->offset = 4;
-		$metadata = $this->_readMetadata();
+		$this->_metadata = $this->_metadata ? array_merge($this->_metadata, $this->_readMetadata()) : $this->_readMetadata();
 
-		if (isset($metadata['columns']))
-			$columns = $metadata['columns'];
-		elseif(isset($this->_metadata['columns']))
-			$columns = $this->_metadata['columns'];
-		else
+		if (!isset($this->_metadata['columns']))
 			throw new Exception('Missing Result Metadata');
 
 		$rowCount = parent::readInt();
@@ -405,7 +423,7 @@ class Result extends Response {
 		if ($rowCount === 0)
 			return null;
 	
-		foreach ($columns as $column)
+		foreach ($this->_metadata['columns'] as $column)
 			return $this->_readBytesAndConvertToType($column['type']);
 	
 		return null;
