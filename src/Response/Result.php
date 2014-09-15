@@ -42,7 +42,7 @@ class Result extends Response {
 		$length = unpack('N', substr($this->data, $this->offset, 4))[1];
 		$this->offset += 4;
 		
-		if ($length === 4294967295)
+		if ($length === 0xffffffff)
 			return null;
 		
 		// do not use $this->read() for performance

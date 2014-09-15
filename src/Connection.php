@@ -187,6 +187,15 @@ class Connection {
 	}
 	
 	/**
+	 * Wait until all statements received response.
+	 */
+	public function flush(){
+		while(!empty($this->_statements)){
+			$this->_getResponse();
+		}
+	}
+	
+	/**
 	 * @return Connection\Node
 	 */
 	public function getNode() {
