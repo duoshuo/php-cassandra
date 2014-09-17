@@ -37,7 +37,10 @@ class Node {
 			}
 		}
 		else{
-			$this->_options = array_merge_recursive($this->_options, $options);
+			if (isset($options['socket'])) {
+				$options['socket'] += $this->_options['socket'];
+			}
+			$this->_options = array_merge($this->_options, $options);
 		}
 	}
 
