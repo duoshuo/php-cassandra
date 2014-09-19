@@ -64,9 +64,12 @@ abstract class Base{
 	 * @param int|array $dataType
 	 * @param mixed $value
 	 * @throws Exception
-	 * @return Base
+	 * @return Base|null
 	 */
 	public static function getTypeObject($dataType, $value) {
+		if ($value === null)
+			return null;
+		
 		switch($dataType) {
 			case self::BLOB:
 				return new Blob($value);
