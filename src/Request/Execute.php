@@ -55,7 +55,7 @@ class Execute extends Request{
 		$this->_queryId = $queryId;
 		$this->_values = $values;
 		 
-		$this->_consistency = $consistency ?: Request::CONSISTENCY_QUORUM;
+		$this->_consistency = $consistency === null ? Request::CONSISTENCY_QUORUM : $consistency;
 		$this->_options = $options;
 	}
 	
