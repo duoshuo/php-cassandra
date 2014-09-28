@@ -326,7 +326,7 @@ class Result extends Response {
 		$array = new \SplFixedArray($rowCount);
 	
 		for($i = 0; $i < $rowCount; ++$i){
-			foreach($columns as $j => $column){
+			foreach($this->_metadata['columns'] as $j => $column){
 				$value = $this->_readBytesAndConvertToType($column['type']);
 	
 				if ($j == $index)

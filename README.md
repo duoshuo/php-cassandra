@@ -118,17 +118,21 @@ $rows = $response->fetchAll();
 
 ```php
 $batchRequest = new Cassandra\Request\Batch();
-$batchRequest->appendQueryId($preparedData['id'], $strictValues)
-	->appendQuery(
-		'INSERT INTO "students" ("id", "name", "age") VALUES (:id, :name, :age)',
-		[
-			'id' => new Cassandra\Type\Uuid('c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc'),
-			'name' => new Cassandra\Type\Varchar('Mark'),
-			'age' => 20,
-		]
-	);
 
-$response = $connection->syncRequest($batch);
+// Append a prepared query
+$batchRequest->appendQueryId($preparedData['id'], $strictValues);
+
+// Append a query string
+$batchRequest->appendQuery(
+	'INSERT INTO "students" ("id", "name", "age") VALUES (:id, :name, :age)',
+	[
+		'id' => new Cassandra\Type\Uuid('c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc'),
+		'name' => new Cassandra\Type\Varchar('Mark'),
+		'age' => 20,
+	]
+);
+
+$response = $connection->syncRequest($batchRequest);
 $rows = $response->fetchAll();
 ```
 
