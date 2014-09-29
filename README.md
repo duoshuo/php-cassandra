@@ -5,17 +5,17 @@ Cassandra client library for PHP
 <a href="https://scrutinizer-ci.com/g/duoshuo/php-cassandra/"><img src="https://scrutinizer-ci.com/g/duoshuo/php-cassandra/badges/quality-score.png?b=master" /></a>
 <a href="https://scrutinizer-ci.com/g/duoshuo/php-cassandra/"><img src="https://scrutinizer-ci.com/g/duoshuo/php-cassandra/badges/build.png?b=master" /></a>
 
-Cassandra client library for PHP, which support Protocol v3 and asynchronous request 
+Cassandra client library for PHP, which support Protocol v3 (Cassandra 2.1) and asynchronous request 
 
 ## Features
-* Using Protocol v3
+* Using Protocol v3 (Cassandra 2.1)
 * Support asynchronous and synchronous request
 * Support for logged, unlogged and counter batches
 * The ability to specify the consistency, "serial consistency" and all flags defined in the protocol
 * Support Query preparation and execute
 * Support all data types convertion and binding
 * Support conditional update/insert
-* 4 fetch methods (fetchAll, fetchRow, fetchCol, fetchOne)
+* 5 fetch methods (fetchAll, fetchRow, fetchPairs, fetchCol, fetchOne)
 * 800% performance improvement(async mode) than other php cassandra client libraries
 
 ## Installation
@@ -67,6 +67,9 @@ $rows = $response->fetchAll();		// SplFixedArray
 
 // Return a SplFixedArray containing a specified index column from the result set.
 $col = $response->fetchCol();		// SplFixedArray
+
+// Return a assoc array with key-value pairs, the key is the first column, the value is the second column. 
+$col = $response->fetchPairs();		// assoc array
 
 // Return the first row of the result set.
 $row = $response->fetchRow();		// ArrayObject
@@ -120,7 +123,11 @@ $rows = $response->fetchAll();
 $batchRequest = new Cassandra\Request\Batch();
 
 // Append a prepared query
-$batchRequest->appendQueryId($preparedData['id'], $strictValues);
+$preparedData = $connection->prepare('SELECT * FROM "users" WHERE "id" = :id');
+$values = [
+		'id' => 'c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc',
+	];
+$batchRequest->appendQueryId($preparedData['id'], Cassandra\Request\Request::strictTypeValues($values, $preparedData['metadata']['columns']));
 
 // Append a query string
 $batchRequest->appendQuery(
@@ -180,8 +187,8 @@ All types are supported.
 //  CollectionSet
     new Cassandra\Type\CollectionSet([1, 2, 3], Cassandra\Type\Base::INT);
 
-//  Timestamp
-    new Cassandra\Type\Timestamp(1409830696263);
+//  Timestamp (unit: microseconds)
+    new Cassandra\Type\Timestamp(1409830696263000);
 
 //  Uuid
     new Cassandra\Type\Uuid('62c36092-82a1-3a00-93d1-46196ee77204');
