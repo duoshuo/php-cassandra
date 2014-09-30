@@ -123,10 +123,11 @@ $rows = $response->fetchAll();
 $batchRequest = new Cassandra\Request\Batch();
 
 // Append a prepared query
-$preparedData = $connection->prepare('SELECT * FROM "users" WHERE "id" = :id');
+$preparedData = $connection->prepare('UPDATE "students" SET "age" = :age WHERE "id" = :id');
 $values = [
-		'id' => 'c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc',
-	];
+	'age' => 21,
+	'id' => 'c5419d81-499e-4c9c-ac0c-fa6ba3ebc2bc',
+];
 $batchRequest->appendQueryId($preparedData['id'], Cassandra\Request\Request::strictTypeValues($values, $preparedData['metadata']['columns']));
 
 // Append a query string
