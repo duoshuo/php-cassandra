@@ -215,62 +215,6 @@ trait StreamReader {
 	}
 
 	/**
-	 * @param int|array $type
-	 * @param bool $isCollectionElement for collection element used other alg. a temporary solution
-	 * @return mixed
-	 */
-	public function readByType($type, $isCollectionElement = false) {
-		switch ($type) {
-			case Type\Base::ASCII:
-			case Type\Base::VARCHAR:
-			case Type\Base::TEXT:
-				return $isCollectionElement ? $this->readString() : $this->data;
-			case Type\Base::BIGINT:
-			case Type\Base::COUNTER:
-			case Type\Base::VARINT:
-			case Type\Base::TIMESTAMP:	//	use big int to present microseconds timestamp
-				return $this->readVarint();
-			case Type\Base::BLOB:
-				return $this->readBytes();
-			case Type\Base::BOOLEAN:
-				return $this->readBoolean();
-			case Type\Base::DECIMAL:
-				return $this->readDecimal();
-			case Type\Base::DOUBLE:
-				return $this->readDouble();
-			case Type\Base::FLOAT:
-				return $this->readFloat();
-			case Type\Base::INT:
-				return $this->readInt();
-			case Type\Base::UUID:
-				return $this->readUuid();
-			case Type\Base::TIMEUUID:
-				return $this->readUuid();
-			case Type\Base::INET:
-				return $this->readInet();
-			default:
-				if (is_array($type)){
-					switch($type['type']){
-						case Type\Base::COLLECTION_LIST:
-						case Type\Base::COLLECTION_SET:
-							return $this->readList($type['value']);
-						case Type\Base::COLLECTION_MAP:
-							return $this->readMap($type['key'], $type['value']);
-						case Type\Base::UDT:
-							throw new Exception('Unsupported Type UDT.');
-						case Type\Base::TUPLE:
-							throw new Exception('Unsupported Type Tuple.');
-						case Type\Base::CUSTOM:
-						default:
-							return $this->readBytes();
-					}
-				}
-				trigger_error('Unknown type ' . var_export($type, true));
-				return null;
-		}
-	}
-
-	/**
 	 * read a [bytes] and read by type
 	 *
 	 * @param int|array $type
