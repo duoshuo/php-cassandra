@@ -30,12 +30,12 @@ class CollectionMap extends Base{
 	}
 	
 	public function getBinary(){
-		$data = pack('n', count($this->_value));
+		$data = pack('N', count($this->_value));
 		foreach($this->_value as $key => $value) {
 			$keyPacked = Base::getTypeObject($this->_keyType, $key)->getBinary();
-			$data .= pack('n', strlen($keyPacked)) . $keyPacked;
+			$data .= pack('N', strlen($keyPacked)) . $keyPacked;
 			$valuePacked = Base::getTypeObject($this->_valueType, $value)->getBinary();
-			$data .= pack('n', strlen($valuePacked)) . $valuePacked;
+			$data .= pack('N', strlen($valuePacked)) . $valuePacked;
 		}
 		return $data;
 	}

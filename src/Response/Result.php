@@ -33,90 +33,6 @@ class Result extends Response {
 	protected $_rowClass;
 
 	/**
-	 * read a [bytes] and read by type
-	 *
-	 * @param int|array $type
-	 * @return mixed
-	 */
-	protected function _readBytesAndConvertToType($type){
-		$length = unpack('N', substr($this->data, $this->offset, 4))[1];
-		$this->offset += 4;
-		
-		if ($length === 0xffffffff)
-			return null;
-		
-		// do not use $this->read() for performance
-		$data = substr($this->data, $this->offset, $length);
-		$this->offset += $length;
-		
-		switch ($type) {
-			case Type\Base::ASCII:
-			case Type\Base::VARCHAR:
-			case Type\Base::TEXT:
-				return $data;
-			case Type\Base::BIGINT:
-			case Type\Base::COUNTER:
-			case Type\Base::VARINT:
-			case Type\Base::TIMESTAMP:	//	use big int to present microseconds timestamp
-				$unpacked = unpack('N2', $data);
-				return $unpacked[1] << 32 | $unpacked[2];
-			case Type\Base::BLOB:
-				$length = unpack('N', substr($data, 0, 4))[1];
-				return substr($data, 4, $length);
-			case Type\Base::BOOLEAN:
-				return (bool) unpack('C', $data)[1];
-			case Type\Base::DECIMAL:
-				$unpacked = unpack('N3', $data);
-				$value = $unpacked[2] << 32 | $unpacked[3];
-				$len = strlen($value);
-				return substr($value, 0, $len - $unpacked[1]) . '.' . substr($value, $len - $unpacked[1]);
-			case Type\Base::DOUBLE:
-				return unpack('d', strrev($data))[1];
-			case Type\Base::FLOAT:
-				return unpack('f', strrev($data))[1];
-			case Type\Base::INT:
-				return unpack('N', $data)[1];
-			case Type\Base::UUID:
-			case Type\Base::TIMEUUID:
-				$uuid = '';
-				$unpacked = unpack('n8', $data);
-				
-				for ($i = 1; $i <= 8; ++$i) {
-					if ($i == 3 || $i == 4 || $i == 5 || $i == 6) {
-						$uuid .= '-';
-					}
-					$uuid .= str_pad(dechex($unpacked[$i]), 4, '0', STR_PAD_LEFT);
-				}
-				return $uuid;
-			case Type\Base::INET:
-				return inet_ntop($data);
-			default:
-				if (is_array($type)){
-					switch($type['type']){
-						case Type\Base::COLLECTION_LIST:
-						case Type\Base::COLLECTION_SET:
-							$dataStream = new DataStream($data);
-							return $dataStream->readList($type['value']);
-						case Type\Base::COLLECTION_MAP:
-							$dataStream = new DataStream($data);
-							return $dataStream->readMap($type['key'], $type['value']);
-						case Type\Base::UDT:
-							throw new Exception('Unsupported Type UDT.');
-						case Type\Base::TUPLE:
-							throw new Exception('Unsupported Type Tuple.');
-						case Type\Base::CUSTOM:
-						default:
-							$length = unpack('N', substr($data, 0, 4))[1];
-							return substr($data, 4, $length);
-					}
-				}
-				
-				trigger_error('Unknown type ' . var_export($type, true));
-				return null;
-		}
-	}
-	
-	/**
 	 * @return \SplFixedArray|string|array|null
 	 */
 	public function getData() {
@@ -297,7 +213,7 @@ class Result extends Response {
 			$data = [];
 	
 			foreach ($this->_metadata['columns'] as $column)
-				$data[$column['name']] = $this->_readBytesAndConvertToType($column['type']);
+				$data[$column['name']] = $this->readBytesAndConvertToType($column['type']);
 				
 			$rows[$i] = $rowClass === null ? $data : new $rowClass($data);
 		}
@@ -327,7 +243,7 @@ class Result extends Response {
 	
 		for($i = 0; $i < $rowCount; ++$i){
 			foreach($this->_metadata['columns'] as $j => $column){
-				$value = $this->_readBytesAndConvertToType($column['type']);
+				$value = $this->readBytesAndConvertToType($column['type']);
 	
 				if ($j == $index)
 					$array[$i] = $value;
@@ -358,7 +274,7 @@ class Result extends Response {
 	
 		for($i = 0; $i < $rowCount; ++$i){
 			foreach($this->_metadata['columns'] as $j => $column){
-				$value = $this->_readBytesAndConvertToType($column['type']);
+				$value = $this->readBytesAndConvertToType($column['type']);
 	
 				if ($j === 0){
 					$key = $value;
@@ -398,7 +314,7 @@ class Result extends Response {
 		
 		$data = [];
 		foreach ($this->_metadata['columns'] as $column)
-			$data[$column['name']] = $this->_readBytesAndConvertToType($column['type']);
+			$data[$column['name']] = $this->readBytesAndConvertToType($column['type']);
 	
 		return $rowClass === null ? $data : new $rowClass($data);
 	}
@@ -424,7 +340,7 @@ class Result extends Response {
 			return null;
 	
 		foreach ($this->_metadata['columns'] as $column)
-			return $this->_readBytesAndConvertToType($column['type']);
+			return $this->readBytesAndConvertToType($column['type']);
 	
 		return null;
 	}
