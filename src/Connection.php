@@ -108,16 +108,15 @@ class Connection {
 		$receivedBytes = 0;
 		do{
 			$data .= socket_read($this->connection, $length - $receivedBytes);
+
+			$errorCode = socket_last_error($this->connection);
+			if ($errorCode !== 0)
+				throw new Connection\Exception(socket_strerror($errorCode));
+
 			$receivedBytes = strlen($data);
 		}
 		while($receivedBytes < $length);
-		
-		$errorCode = socket_last_error($this->connection);
-		
-		if ($errorCode !== 0) {
-			throw new Connection\Exception(socket_strerror($errorCode));
-		}
-	
+
 		return $data;
 	}
 	
@@ -240,7 +239,7 @@ class Connection {
 		
 		if ($response instanceof Response\Error)
 			throw new Exception($response->getData());
-		
+
 		return $response;
 	}
 	
