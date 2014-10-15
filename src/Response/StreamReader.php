@@ -257,7 +257,7 @@ trait StreamReader {
 			case Type\Base::FLOAT:
 				return unpack('f', strrev($data))[1];
 			case Type\Base::INT:
-				return unpack('N', $data)[1];
+				return unpack('N', $data)[1] << 32 >> 32;
 			case Type\Base::UUID:
 			case Type\Base::TIMEUUID:
 				$uuid = '';
