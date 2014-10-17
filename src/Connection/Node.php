@@ -53,6 +53,10 @@ class Node {
 		if (!empty($this->socket)) return $this->socket;
 
 		$this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+
+		if ($this->socket === false)
+			throw new Exception(socket_strerror(socket_last_error()));
+
 		socket_set_option($this->socket, getprotobyname('TCP'), TCP_NODELAY, 1);
 		
 		foreach($this->_options['socket'] as $optname => $optval)
