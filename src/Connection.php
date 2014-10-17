@@ -105,17 +105,17 @@ class Connection {
 	 */
 	protected function fetchData($length) {
 		$data = '';
-		$receivedBytes = 0;
-		do{
-			$data .= socket_read($this->connection, $length - $receivedBytes);
+		$remainder = $length;
 
-			$errorCode = socket_last_error($this->connection);
-			if ($errorCode !== 0)
-				throw new Connection\Exception(socket_strerror($errorCode));
+		while($remainder > 0) {
+			$readData = socket_read($this->connection, $remainder);
 
-			$receivedBytes = strlen($data);
+			if ($readData === false)
+				throw new Connection\Exception(socket_strerror(socket_last_error($this->connection)));
+
+			$data .= $readData;
+			$remainder -= strlen($readData);
 		}
-		while($receivedBytes < $length);
 
 		return $data;
 	}

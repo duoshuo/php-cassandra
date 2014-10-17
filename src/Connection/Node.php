@@ -54,9 +54,8 @@ class Node {
 
 		$this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
 
-		$errorCode = socket_last_error();
-		if ($errorCode !== 0)
-			throw new Exception(socket_strerror($errorCode));
+		if ($this->socket === false)
+			throw new Exception(socket_strerror(socket_last_error()));
 
 		socket_set_option($this->socket, getprotobyname('TCP'), TCP_NODELAY, 1);
 		
