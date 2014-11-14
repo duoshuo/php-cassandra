@@ -260,8 +260,7 @@ trait StreamReader {
 					$value = $value << 8 | $unpacked[$i];
 				$shift = (8 - $valueByteLen) << 3;
 				$value = $value << $shift >> $shift;
-				$valueIntLen = strlen($value) - $unpacked['scale'];
-				return (double)(substr($value, 0, $valueIntLen) . '.' . substr($value, $valueIntLen));
+				return $value / pow(10, $unpacked['scale']);
 			case Type\Base::DOUBLE:
 				return unpack('d', strrev($data))[1];
 			case Type\Base::FLOAT:
