@@ -237,9 +237,8 @@ trait StreamReader {
 			case Type\Base::TEXT:
 				return $data;
 			case Type\Base::VARINT:
-				$unpacked = unpack('C*', $data);
 				$value = 0;
-				foreach ($unpacked as $byte)
+				foreach (unpack('C*', $data) as $byte)
 					$value = $value << 8 | $byte;
 				$shift = (8 - $length) << 3;
 				return $value << $shift >> $shift;
