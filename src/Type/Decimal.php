@@ -12,7 +12,7 @@ class Decimal extends Base{
 	public function getBinary(){
 		$scaleLen = strlen(strstr($this->_value, '.'));
 		if ($scaleLen) {
-			$scaleLen--;
+			--$scaleLen;
 			$this->_value = str_replace('.', '', $this->_value);
 		}
 		$highMap = 0xffffffff00000000;

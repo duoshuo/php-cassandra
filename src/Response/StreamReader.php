@@ -236,9 +236,15 @@ trait StreamReader {
 			case Type\Base::VARCHAR:
 			case Type\Base::TEXT:
 				return $data;
+			case Type\Base::VARINT:
+				$unpacked = unpack('C*', $data);
+				$value = 0;
+				foreach ($unpacked as $byte)
+					$value = $value << 8 | $byte;
+				$shift = (8 - $length) << 3;
+				return $value << $shift >> $shift;
 			case Type\Base::BIGINT:
 			case Type\Base::COUNTER:
-			case Type\Base::VARINT:
 			case Type\Base::TIMESTAMP:	//	use big int to present microseconds timestamp
 				$unpacked = unpack('N2', $data);
 				return $unpacked[1] << 32 | $unpacked[2];
@@ -248,10 +254,15 @@ trait StreamReader {
 			case Type\Base::BOOLEAN:
 				return (bool) unpack('C', $data)[1];
 			case Type\Base::DECIMAL:
-				$unpacked = unpack('N3', $data);
-				$value = $unpacked[2] << 32 | $unpacked[3];
-				$len = strlen($value);
-				return substr($value, 0, $len - $unpacked[1]) . '.' . substr($value, $len - $unpacked[1]);
+				$unpacked = unpack('N1scale/C*', $data);
+				$valueByteLen = $length - 4;
+				$value = 0;
+				for ($i = 1; $i <= $valueByteLen; ++$i)
+					$value = $value << 8 | $unpacked[$i];
+				$shift = (8 - $valueByteLen) << 3;
+				$value = $value << $shift >> $shift;
+				$valueIntLen = strlen($value) - $unpacked['scale'];
+				return (double)(substr($value, 0, $valueIntLen) . '.' . substr($value, $valueIntLen));
 			case Type\Base::DOUBLE:
 				return unpack('d', strrev($data))[1];
 			case Type\Base::FLOAT:
