@@ -165,7 +165,7 @@ All types are supported.
     new Cassandra\Type\Counter(1000);
 
 //  Decimal
-    new Cassandra\Type\Decimal('2.718281828459');
+    new Cassandra\Type\Decimal(123, 4);     // 0.0123
 
 //  Double
     new Cassandra\Type\Double(2.718281828459);

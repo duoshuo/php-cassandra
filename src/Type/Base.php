@@ -91,8 +91,8 @@ abstract class Base{
 				return new Boolean($value);
 	
 			case self::DECIMAL:
-				return new Decimal($value);
-	
+				return is_array($value) ? new Decimal($value[0], $value[1]) : new Decimal($value);
+
 			case self::DOUBLE:
 				return new Double($value);
 	
