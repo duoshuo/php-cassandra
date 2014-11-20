@@ -114,7 +114,7 @@ class Request implements Frame{
 				$binary = $value ? chr(1) : chr(0);
 			}
 			else{
-				throw new Exception('Unknown type.');
+				throw new \Exception('Unknown type.');
 			}
 			
 			if ($namesForValues)
