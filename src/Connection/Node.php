@@ -61,9 +61,16 @@ class Node {
 		
 		foreach($this->_options['socket'] as $optname => $optval)
 			socket_set_option($this->socket, SOL_SOCKET, $optname, $optval);
-		
-		if (!socket_connect($this->socket, $this->_options['host'], $this->_options['port']))
-			throw new Exception("Unable to connect to Cassandra node: {$this->_options['host']}:{$this->_options['port']}");
+
+		try {
+			$connect = socket_connect($this->socket, $this->_options['host'], $this->_options['port']);
+
+			if ($connect === false)
+				throw new \Exception(socket_strerror(socket_last_error($this->socket)));
+
+		} catch(\Exception $e) {
+			throw new Exception("Unable to connect to Cassandra node: {$this->_options['host']}:{$this->_options['port']}", 0, $e);
+		}
 
 		return $this->socket;
 	}
