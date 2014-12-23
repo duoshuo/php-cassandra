@@ -31,6 +31,20 @@ class NodeTest extends TestCase {
     }
 
     /**
+     * @param Node $node
+     * @depends testNewInstance
+     */
+    public function testIsConnected(Node $node)
+    {
+        $this->assertFalse($node->isConnected());
+
+        $node->connect();
+
+        $this->assertTrue($node->isConnected());
+    }
+
+
+    /**
      * @depends testNewInstance
      * @param Node $node
      */
@@ -44,7 +58,7 @@ class NodeTest extends TestCase {
      * @depends testNewInstance
      * @param Node $node
      */
-    public function testGetConnectionSuccess(Node $node)
+    public function testGetConnectionReturnsResource(Node $node)
     {
         $connection = $node->getConnection();
 
@@ -61,5 +75,33 @@ class NodeTest extends TestCase {
         $this->setExpectedException('Cassandra\Connection\Exception', "invalidhost:9042");
 
         $node->getConnection();
+        $node->disconnect();
+    }
+
+    public function testInvalidOptions()
+    {
+        $node = new Node([
+            'host' => 'localhost',
+            'port' => 19042,
+            'socket' => [
+                SO_RCVTIMEO => -1,
+            ]
+        ]);
+
+        $this->setExpectedException('Cassandra\Connection\Exception', "Unable to set socket option");
+
+        $node->connect();
+    }
+
+    /**
+     *
+     * @depends testNewInstance
+     * @param Node $node
+     */
+    public function testDisconnect(Node $node)
+    {
+        $node->disconnect();
+
+        $this->assertFalse($node->isConnected());
     }
 }

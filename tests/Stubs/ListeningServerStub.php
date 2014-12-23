@@ -10,7 +10,7 @@ class ListeningServerStub
 
         // Bind the socket to an address/port
         if(!socket_bind($this->sock, 'localhost', $port)) {
-            throw new RuntimeException('Could not bind to address');
+            throw new \RuntimeException('Could not bind to address');
         }
 
         socket_set_nonblock($this->sock);
