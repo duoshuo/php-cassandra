@@ -248,8 +248,7 @@ trait StreamReader {
 				$unpacked = unpack('N2', $data);
 				return $unpacked[1] << 32 | $unpacked[2];
 			case Type\Base::BLOB:
-				$length = unpack('N', substr($data, 0, 4))[1];
-				return substr($data, 4, $length);
+				return $data;
 			case Type\Base::BOOLEAN:
 				return (bool) unpack('C', $data)[1];
 			case Type\Base::DECIMAL:
