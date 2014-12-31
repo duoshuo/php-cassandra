@@ -140,6 +140,13 @@ trait StreamReader {
 		return $map;
 	}
 
+	public function readTuple($types) {
+		$tuple = [];
+		foreach ($types as $type)
+			$tuple[] = $this->readBytesAndConvertToType($type);
+		return $tuple;
+	}
+
 	/**
 	 * Read float.
 	 *
@@ -293,7 +300,8 @@ trait StreamReader {
 						case Type\Base::UDT:
 							throw new Exception('Unsupported Type UDT.');
 						case Type\Base::TUPLE:
-							throw new Exception('Unsupported Type Tuple.');
+							$dataStream = new DataStream($data);
+							return $dataStream->readTuple($type['types']);
 						case Type\Base::CUSTOM:
 						default:
 							$length = unpack('N', substr($data, 0, 4))[1];
