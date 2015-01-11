@@ -32,7 +32,7 @@ class Tuple extends Base{
 			}
 
 			if ($binary === null)
-				$data .= pack('N', 4294967295);
+				$data .= pack('N', 0xffffffff);
 			else
 				$data .= pack('N', strlen($binary)) . $binary;
 		}

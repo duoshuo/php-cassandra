@@ -85,7 +85,7 @@ trait StreamReader {
 	 */
 	public function readBytes() {
 		$length = unpack('N', $this->read(4))[1];
-		if ($length == 4294967295)
+		if ($length === 0xffffffff)
 			return null;
 		return $this->read($length);
 	}
@@ -142,8 +142,13 @@ trait StreamReader {
 
 	public function readTuple($types) {
 		$tuple = [];
-		foreach ($types as $type)
-			$tuple[] = $this->readBytesAndConvertToType($type);
+		$dataLength = strlen($this->data);
+		foreach ($types as $key => $type) {
+			if ($this->offset < $dataLength)
+				$tuple[$key] = $this->readBytesAndConvertToType($type);
+			else
+				$tuple[$key] = null;
+		}
 		return $tuple;
 	}
 
@@ -298,7 +303,8 @@ trait StreamReader {
 							$dataStream = new DataStream($data);
 							return $dataStream->readMap($type['key'], $type['value']);
 						case Type\Base::UDT:
-							throw new Exception('Unsupported Type UDT.');
+							$dataStream = new DataStream($data);
+							return $dataStream->readTuple($type['nameTypeMap']);
 						case Type\Base::TUPLE:
 							$dataStream = new DataStream($data);
 							return $dataStream->readTuple($type['types']);

@@ -13,7 +13,7 @@ Cassandra client library for PHP, which support Protocol v3 (Cassandra 2.1) and 
 * Support for logged, unlogged and counter batches
 * The ability to specify the consistency, "serial consistency" and all flags defined in the protocol
 * Support Query preparation and execute
-* Support all data types convertion and binding
+* Support all data types conversion and binding, including collection types, tuple and UDT
 * Support conditional update/insert
 * 5 fetch methods (fetchAll, fetchRow, fetchPairs, fetchCol, fetchOne)
 * 800% performance improvement(async mode) than other php cassandra client libraries
@@ -165,7 +165,7 @@ All types are supported.
     new Cassandra\Type\Counter(1000);
 
 //  Decimal
-    new Cassandra\Type\Decimal(123, 4);     // 0.0123
+    new Cassandra\Type\Decimal(123, 4); 	// 0.0123
 
 //  Double
     new Cassandra\Type\Double(2.718281828459);
@@ -205,6 +205,12 @@ All types are supported.
 
 //  Custom
     new Cassandra\Type\Custom('string');
+
+//  Tuple
+    new Cassandra\Type\Tuple([new Cassandra\Type\Float(3.1), 41, '59']);
+
+//  UDT
+    new Cassandra\Type\UDT([new Cassandra\Type\Float(3.1), 41, '59']); 	// in the order defined by the type
 ```
 
 ## Recommend Libraries

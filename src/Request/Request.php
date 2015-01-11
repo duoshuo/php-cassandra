@@ -121,7 +121,7 @@ class Request implements Frame{
 				$valuesBinary .= pack('n', strlen($name)) . $name;
 
 			if ($binary === null)
-				$valuesBinary .= pack('N', 4294967295);
+				$valuesBinary .= pack('N', 0xffffffff);
 			else 
 				$valuesBinary .= pack('N', strlen($binary)) . $binary;
 		}
