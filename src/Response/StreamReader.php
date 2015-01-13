@@ -236,7 +236,7 @@ trait StreamReader {
 		$length = unpack('N', substr($this->data, $this->offset, 4))[1];
 		$this->offset += 4;
 
-		if ($length === 0xffffffff)
+		if ($length === 0xffffffff || $length === -1)
 			return null;
 
 		// do not use $this->read() for performance
