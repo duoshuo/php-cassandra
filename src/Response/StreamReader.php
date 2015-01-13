@@ -84,9 +84,11 @@ trait StreamReader {
 	 * @return string
 	 */
 	public function readBytes() {
-		$length = unpack('N', $this->read(4))[1];
-		if ($length === 0xffffffff)
+		$binaryLength = $this->read(4);
+		if ($binaryLength === "\xff\xff\xff\xff")
 			return null;
+
+		$length = unpack('N', $binaryLength)[1];
 		return $this->read($length);
 	}
 
@@ -233,11 +235,13 @@ trait StreamReader {
 	 * @return mixed
 	 */
 	public function readBytesAndConvertToType($type){
-		$length = unpack('N', substr($this->data, $this->offset, 4))[1];
+		$binaryLength = substr($this->data, $this->offset, 4);
 		$this->offset += 4;
 
-		if ($length === 0xffffffff || $length === -1)
+		if ($binaryLength === "\xff\xff\xff\xff")
 			return null;
+
+		$length = unpack('N', $binaryLength)[1];
 
 		// do not use $this->read() for performance
 		$data = substr($this->data, $this->offset, $length);
