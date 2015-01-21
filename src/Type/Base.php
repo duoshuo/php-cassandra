@@ -117,6 +117,9 @@ abstract class Base{
 			case self::UUID:
 				return new Uuid($value);
 	
+			case self::UDT:
+				return $value instanceof UDT ? $value : new UDT($value);
+				
 			default:
 				if (is_array($dataType)){
 					switch($dataType['type']){
