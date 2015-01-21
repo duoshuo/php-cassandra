@@ -207,10 +207,10 @@ All types are supported.
     new Cassandra\Type\Custom('string');
 
 //  Tuple
-    new Cassandra\Type\Tuple([new Cassandra\Type\Float(3.1), 41, '59']);
+    new Cassandra\Type\Tuple([1, '2'], [Cassandra\Type\Base::INT, Cassandra\Type\Base::TEXT]);
 
 //  UDT
-    new Cassandra\Type\UDT([new Cassandra\Type\Float(3.1), 41, '59']); 	// in the order defined by the type
+    new Cassandra\Type\UDT(['intField' => 1, 'textField' => '2'], ['intField' => Cassandra\Type\Base::INT, 'textField' => Cassandra\Type\Base::TEXT]); 	// in the order defined by the type
 ```
 
 ## Recommend Libraries

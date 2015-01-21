@@ -90,15 +90,15 @@ class Result extends Response {
 				];
 			case Type\Base::UDT:
 				$data = [
-					'type'			=> $type,
-					'keyspace'		=> self::readString(),
-					'name'			=> self::readString(),
-					'nameTypeMap'	=> [],
+					'type'		=> $type,
+					'keyspace'	=> self::readString(),
+					'name'		=> self::readString(),
+					'typeMap'	=> [],
 				];
 				$length = self::readShort();
 				for($i = 0; $i < $length; ++$i){
 					$key = self::readString();
-					$data['nameTypeMap'][$key] = self::readType();
+					$data['typeMap'][$key] = self::readType();
 				}
 				return $data;
 			case Type\Base::TUPLE:

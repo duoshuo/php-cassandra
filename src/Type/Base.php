@@ -116,10 +116,7 @@ abstract class Base{
 				return new Timeuuid($value);
 			case self::UUID:
 				return new Uuid($value);
-	
-			case self::UDT:
-				return $value instanceof UDT ? $value : new UDT($value);
-				
+
 			default:
 				if (is_array($dataType)){
 					switch($dataType['type']){
@@ -132,9 +129,9 @@ abstract class Base{
 						case self::COLLECTION_MAP:
 							return new CollectionMap($value, $dataType['key'], $dataType['value']);
 						case self::UDT:
-							throw new Exception('Unsupported Type UDT.');
+							return new UDT($value, $dataType['typeMap']);
 						case self::TUPLE:
-							throw new Exception('Unsupported Type Tuple.');
+							return new Tuple($value, $dataType['types']);
 						default:
 							return new Blob($value);
 					}

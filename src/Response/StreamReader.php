@@ -308,7 +308,7 @@ trait StreamReader {
 							return $dataStream->readMap($type['key'], $type['value']);
 						case Type\Base::UDT:
 							$dataStream = new DataStream($data);
-							return $dataStream->readTuple($type['nameTypeMap']);
+							return $dataStream->readTuple($type['typeMap']);
 						case Type\Base::TUPLE:
 							$dataStream = new DataStream($data);
 							return $dataStream->readTuple($type['types']);

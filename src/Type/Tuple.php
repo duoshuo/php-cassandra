@@ -3,39 +3,29 @@ namespace Cassandra\Type;
 
 class Tuple extends Base{
 
-	public function __construct($value){
-		if ((array)$value !== $value) throw new Exception('Incoming value must be of type array.');
+	protected $_types;
+
+	public function __construct($value, $types){
+		if ((array)$value !== $value || (array)$types !== $types) throw new Exception('Incoming value must be of type array.');
 
 		$this->_value = $value;
+		$this->_types = $types;
 	}
 
 	public function getBinary(){
 		$data = '';
-		foreach ($this->_value as $value) {
-			switch(true){
-				case $value instanceof Base:
-					$binary = $value->getBinary();
-					break;
-				case $value === null:
-					$binary = null;
-					break;
-				case is_int($value):
-					$binary = pack('N', $value);
-					break;
-				case is_string($value):
-					$binary = $value;
-					break;
-				case is_bool($value):
-					$binary = $value ? chr(1) : chr(0);
-					break;
-				default:
-					throw new Exception('Unknown type.');
-			}
+		foreach ($this->_types as $key => $type) {
+			$typeObject = Base::getTypeObject($type, $this->_value[$key]);
 
-			$data .= $binary === null
-				? "\xff\xff\xff\xff"
-				: pack('N', strlen($binary)) . $binary;
+			if ($typeObject === null) {
+				$data .= "\xff\xff\xff\xff";
+			}
+			else {
+				$binary = $typeObject->getBinary();
+				$data .= pack('N', strlen($binary)) . $binary;
+			}
 		}
+
 		return $data;
 	}
 }

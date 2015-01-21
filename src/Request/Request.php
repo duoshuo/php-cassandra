@@ -98,32 +98,32 @@ class Request implements Frame{
 		$values = array_change_key_case($values);
 		
 		foreach($values as $name => $value) {
-			if ($value instanceof Type\Base){
-				$binary = $value->getBinary();
+			switch (true) {
+				case $value instanceof Type\Base:
+					$binary = $value->getBinary();
+					break;
+				case $value === null:
+					$binary = null;
+					break;
+				case is_int($value):
+					$binary = pack('N', $value);
+					break;
+				case is_string($value):
+					$binary = $value;
+					break;
+				case is_bool($value):
+					$binary = $value ? chr(1) : chr(0);
+					break;
+				default:
+					throw new Type\Exception('Unknown type.');
 			}
-			elseif ($value === null){
-				$binary = null;
-			}
-			elseif (is_int($value)){
-				$binary = pack('N', $value);
-			}
-			elseif (is_string($value)){
-				$binary = $value;
-			}
-			elseif (is_bool($value)){
-				$binary = $value ? chr(1) : chr(0);
-			}
-			else{
-				throw new Type\Exception('Unknown type.');
-			}
-			
+
 			if ($namesForValues)
 				$valuesBinary .= pack('n', strlen($name)) . $name;
 
-			if ($binary === null)
-				$valuesBinary .= "\xff\xff\xff\xff";
-			else 
-				$valuesBinary .= pack('N', strlen($binary)) . $binary;
+			$valuesBinary .= $binary === null
+				? "\xff\xff\xff\xff"
+				: pack('N', strlen($binary)) . $binary;
 		}
 		
 		return $valuesBinary;
