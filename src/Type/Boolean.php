@@ -7,7 +7,7 @@ class Boolean extends Base{
 	 * @param bool $value
 	 * @throws Exception
 	 */
-public function __construct($value){
+	public function __construct($value){
 		if (!is_bool($value))
 			throw new Exception('Incoming value must be of type boolean.');
 
