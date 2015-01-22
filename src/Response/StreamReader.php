@@ -311,7 +311,7 @@ trait StreamReader {
 							return $dataStream->readTuple($type['typeMap']);
 						case Type\Base::TUPLE:
 							$dataStream = new DataStream($data);
-							return $dataStream->readTuple($type['types']);
+							return $dataStream->readTuple($type['typeList']);
 						case Type\Base::CUSTOM:
 						default:
 							$length = unpack('N', substr($data, 0, 4))[1];

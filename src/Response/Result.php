@@ -104,11 +104,11 @@ class Result extends Response {
 			case Type\Base::TUPLE:
 				$data = [
 					'type'	=> $type,
-					'types'	=>	[],
+					'typeList'	=>	[],
 				];
 				$length = self::readShort();
 				for($i = 0; $i < $length; ++$i){
-					$data['types'][] = self::readType();
+					$data['typeList'][] = self::readType();
 				}
 				return $data;
 			default:

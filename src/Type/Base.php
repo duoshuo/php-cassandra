@@ -131,7 +131,7 @@ abstract class Base{
 						case self::UDT:
 							return new UDT($value, $dataType['typeMap']);
 						case self::TUPLE:
-							return new Tuple($value, $dataType['types']);
+							return new Tuple($value, $dataType['typeList']);
 						default:
 							return new Blob($value);
 					}

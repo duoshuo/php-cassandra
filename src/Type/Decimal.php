@@ -5,8 +5,14 @@ class Decimal extends Base{
 
 	protected $_scaleLen;
 
+	/**
+	 * @param int|string $value
+	 * @param int|string $scaleLen
+	 * @throws Exception
+	 */
 	public function __construct($value, $scaleLen = 0){
-		if (!is_numeric($value) || !is_numeric($scaleLen)) throw new Exception('Incoming value must be of type int.');
+		if (!is_numeric($value) || !is_numeric($scaleLen))
+			throw new Exception('Incoming value must be of type int.');
 
 		$this->_value = (int)$value;
 		$this->_scaleLen = max((int)$scaleLen, 0);

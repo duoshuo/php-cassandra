@@ -15,13 +15,13 @@ class CollectionMap extends Base{
 	protected $_valueType;
 	
 	/**
-	 * @param array $values
+	 * @param array $value
 	 * @param int|array $keyType
 	 * @param int|array $valueType
 	 * @throws Exception
 	 */
 	public function __construct($value, $keyType, $valueType) {
-		if ((array)$value !== $value)
+		if (!is_array($value))
 			throw new Exception('Incoming value must be of type array.');
 		
 		$this->_value = $value;

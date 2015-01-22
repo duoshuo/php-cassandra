@@ -2,9 +2,16 @@
 namespace Cassandra\Type;
 
 class Varchar extends Base{
-	
+
+	/**
+	 * @param string $value
+	 * @throws Exception
+	 */
 	public function __construct($value){
-		$this->_value = (string)$value;
+		if (!is_string($value))
+			throw new Exception('Incoming value must be of type string.');
+
+		$this->_value = $value;
 	}
 	
 	public function getBinary(){

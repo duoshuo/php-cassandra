@@ -5,8 +5,14 @@ class Tuple extends Base{
 
 	protected $_types;
 
+	/**
+	 * @param array $value
+	 * @param array $types
+	 * @throws Exception
+	 */
 	public function __construct($value, $types){
-		if ((array)$value !== $value || (array)$types !== $types) throw new Exception('Incoming value must be of type array.');
+		if (!is_array($value) || !is_array($types))
+			throw new Exception('Incoming value must be of type array.');
 
 		$this->_value = $value;
 		$this->_types = $types;
@@ -15,7 +21,9 @@ class Tuple extends Base{
 	public function getBinary(){
 		$data = '';
 		foreach ($this->_types as $key => $type) {
-			$typeObject = Base::getTypeObject($type, $this->_value[$key]);
+			$typeObject = $this->_value[$key] instanceof Base
+				? $this->_value[$key]
+				: Base::getTypeObject($type, $this->_value[$key]);
 
 			if ($typeObject === null) {
 				$data .= "\xff\xff\xff\xff";
