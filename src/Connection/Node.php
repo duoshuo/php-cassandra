@@ -16,10 +16,7 @@ class Node {
 		'port'		=> 9042,
 		'username'	=> null,
 		'password'	=> null,
-		'socket'	=> [
-			SO_RCVTIMEO => ["sec" => 30, "usec" => 0],
-			SO_SNDTIMEO => ["sec" => 5, "usec" => 0],
-		],
+		'timeout'	=> 30,
 	];
 
 	/**
@@ -37,9 +34,6 @@ class Node {
 			}
 		}
 		else{
-			if (isset($options['socket'])) {
-				$options['socket'] += $this->_options['socket'];
-			}
 			$this->_options = array_merge($this->_options, $options);
 		}
 	}
@@ -52,18 +46,12 @@ class Node {
 	public function getConnection() {
 		if (!empty($this->socket)) return $this->socket;
 
-		$this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-
-		if ($this->socket === false)
-			throw new Exception(socket_strerror(socket_last_error()));
-
-		socket_set_option($this->socket, getprotobyname('TCP'), TCP_NODELAY, 1);
-		
-		foreach($this->_options['socket'] as $optname => $optval)
-			socket_set_option($this->socket, SOL_SOCKET, $optname, $optval);
-		
-		if (!socket_connect($this->socket, $this->_options['host'], $this->_options['port']))
+		$this->socket = fsockopen($this->_options['host'], $this->_options['port']);
+		if (!$this->socket)
 			throw new Exception("Unable to connect to Cassandra node: {$this->_options['host']}:{$this->_options['port']}");
+
+		$t = $this->_options['timeout'];
+		stream_set_timeout($this->socket,$this->_options['timeout']);		
 
 		return $this->socket;
 	}
