@@ -116,6 +116,10 @@ abstract class Base{
 				return new Timeuuid($value);
 			case self::UUID:
 				return new Uuid($value);
+				
+			case self::UDT:
+				if($value instanceof UDT)
+					return $value;
 
 			default:
 				if (is_array($dataType)){
