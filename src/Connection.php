@@ -88,7 +88,7 @@ class Connection {
 		if ($this->connection === null)
 			return true;
 
-		return stream_socket_shutdown($this->connection);
+		return fclose($this->connection);
 	}
 	
 	/**
