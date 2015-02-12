@@ -50,8 +50,7 @@ class Node {
 		if (!$this->socket)
 			throw new Exception("Unable to connect to Cassandra node: {$this->_options['host']}:{$this->_options['port']}");
 
-		$t = $this->_options['timeout'];
-		stream_set_timeout($this->socket,$this->_options['timeout']);		
+		stream_set_timeout($this->socket,$this->_options['timeout']);
 
 		return $this->socket;
 	}
