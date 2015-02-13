@@ -213,6 +213,48 @@ All types are supported.
     new Cassandra\Type\UDT(['intField' => 1, 'textField' => '2'], ['intField' => Cassandra\Type\Base::INT, 'textField' => Cassandra\Type\Base::TEXT]); 	// in the order defined by the type
 ```
 
+## Using nested datatypes
+
+```php
+// CollectionSet<UDT>, where UDT contains: Int, Text, Boolean, CollectionList<Text>, CollectionList<UDT>
+new Cassandra\Type\CollectionSet([
+	[
+		'id' => 1,
+		'name' => 'string',
+		'active' => true,
+		'friends' => ['string1', 'string2', 'string3'],
+		'drinks' => [['qty' => 5, 'brand' => 'Pepsi'], ['qty' => 3, 'brand' => 'Coke']]
+	],[
+		'id' => 2,
+		'name' => 'string',
+		'active' => false,
+		'friends' => ['string4', 'string5', 'string6'],
+		'drinks' => []
+	]
+], [
+	'type' => Cassandra\Type\Base::UDT,
+	'typeMap' => [
+		'id' => Cassandra\Type\Base::INT,
+		'name' => Cassandra\Type\Base::TEXT,
+		'active' => Cassandra\Type\Base::BOOLEAN,
+		'friends' => [
+			'type' => Cassandra\Type\Base::COLLECTION_LIST,
+			'value' => Cassandra\Type\Base::TEXT
+		],
+		'drinks' => [
+			'type' => Cassandra\Type\Base::COLLECTION_LIST,
+			'value' => [
+				'type' => Cassandra\Type\Base::UDT,
+				'typeMap' => [
+					'qty' => Cassandra\Type\Base::INT,
+					'brand' => Cassandra\Type\Base::TEXT
+				]
+			]
+		]
+	]
+]);
+```
+
 ## Recommend Libraries
 * [shen2/fluent-cql](https://github.com/shen2/FluentCQL): write CQL in fluent interface
 * [duoshuo/uuid](https://github.com/duoshuo/uuid): generate UUID and TimeUUID
