@@ -87,8 +87,8 @@ class Connection {
 	public function disconnect() {
 		if ($this->connection === null)
 			return true;
-		
-		return socket_shutdown($this->connection);
+
+		return fclose($this->connection);
 	}
 	
 	/**
@@ -108,10 +108,10 @@ class Connection {
 		$remainder = $length;
 
 		while($remainder > 0) {
-			$readData = socket_read($this->connection, $remainder);
+			$readData = fread($this->connection,$remainder);
 
-			if ($readData === false)
-				throw new Connection\Exception(socket_strerror(socket_last_error($this->connection)));
+			if ($readData === false || stream_get_meta_data($this->connection)['timed_out'])
+				throw new Connection\Exception(socket_strerror(socket_last_error()));
 
 			$data .= $readData;
 			$remainder -= strlen($readData);
@@ -233,8 +233,8 @@ class Connection {
 	public function syncRequest(Request\Request $request) {
 		if ($this->connection === null)
 			$this->connect();
-	
-		socket_write($this->connection, $request);
+
+		fwrite($this->connection,$request);
 		$response = $this->getResponse();
 		
 		if ($response instanceof Response\Error)
@@ -254,7 +254,7 @@ class Connection {
 		
 		$streamId = $this->_getNewStreamId();
 		$request->setStream($streamId);
-		socket_write($this->connection, $request);
+		fwrite($this->connection,$request);
 		
 		return $this->_statements[$streamId] = new Statement($this, $streamId);
 	}
