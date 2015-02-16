@@ -45,25 +45,20 @@ class Node {
 	}
 
 	/**
-	 * 
+	 * Create connection and return socket resource
+	 *
 	 * @throws Exception
 	 * @return resource
 	 */
 	public function getConnection() {
-		if (!empty($this->socket)) return $this->socket;
 
-		$this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-
-		if ($this->socket === false)
-			throw new Exception(socket_strerror(socket_last_error()));
-
-		socket_set_option($this->socket, getprotobyname('TCP'), TCP_NODELAY, 1);
-		
-		foreach($this->_options['socket'] as $optname => $optval)
-			socket_set_option($this->socket, SOL_SOCKET, $optname, $optval);
-		
-		if (!socket_connect($this->socket, $this->_options['host'], $this->_options['port']))
-			throw new Exception("Unable to connect to Cassandra node: {$this->_options['host']}:{$this->_options['port']}");
+		if(!$this->isConnected()) {
+			try {
+				$this->connect();
+			} catch(\Exception $e) {
+				throw new Exception("Unable to connect to Cassandra node: {$this->_options['host']}:{$this->_options['port']}. Reason: ". $e->getMessage(), 0, $e);
+			}
+		}
 
 		return $this->socket;
 	}
@@ -71,7 +66,85 @@ class Node {
 	/**
 	 * @return array
 	 */
-	public function getOptions() {
+	public function getOptions()
+	{
 		return $this->_options;
+	}
+
+	/**
+	 * Connect to host/port
+	 *
+	 * @throws Exception
+	 */
+	public function connect()
+	{
+		$this->createConnection();
+		$this->setConnectionOptions();
+
+		$result = @socket_connect($this->socket, $this->_options['host'], $this->_options['port']);
+
+		if($result === false) {
+			throw new Exception("Unable to connect: " . socket_strerror(socket_last_error($this->socket)));
+		}
+	}
+
+	/**
+	 * Disconnect
+	 */
+	public function disconnect()
+	{
+		if(is_resource($this->socket)) {
+			@socket_close($this->socket);
+		}
+
+		$this->socket = null;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isConnected()
+	{
+		return is_resource($this->socket);
+	}
+
+
+	/**
+	 * @throws Exception
+	 */
+	private function createConnection()
+	{
+		$this->socket = @socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+
+		if($this->socket === false) {
+			throw new Exception("Unable to create socket: ". socket_strerror(socket_last_error()));
+		}
+	}
+
+	/**
+	 * @throws Exception
+	 */
+	private function setConnectionOptions()
+	{
+		$this->setConnectionOption(getprotobyname('tcp'), TCP_NODELAY, 1);
+
+		foreach($this->_options['socket'] as $name => $value) {
+			$this->setConnectionOption(SOL_SOCKET, $name, $value);
+		}
+	}
+
+	/**
+	 * @param int $level
+	 * @param int $name
+	 * @param mixed $value
+	 * @throws Exception
+	 */
+	private function setConnectionOption($level, $name, $value)
+	{
+		$result = @socket_set_option($this->socket, $level, $name, $value);
+
+		if($result === false) {
+			throw new Exception("Unable to set socket option: $level, $name");
+		}
 	}
 }
