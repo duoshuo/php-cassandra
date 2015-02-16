@@ -16,7 +16,9 @@ class Request implements Frame{
 	const CONSISTENCY_SERIAL = 0x0008;
 	const CONSISTENCY_LOCAL_SERIAL = 0x0009;
 	const CONSISTENCY_LOCAL_ONE = 0x000A;
-	
+
+	const CONSISTENCY_DEFAULT = Request::CONSISTENCY_ONE;
+
 	/**
 	 * @var int
 	 */

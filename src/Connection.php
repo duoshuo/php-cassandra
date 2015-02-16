@@ -50,6 +50,11 @@ class Connection {
 	protected $_recycledStreams;
 
 	/**
+	 * @var int
+	 */
+	protected $consistency = Request\Request::CONSISTENCY_DEFAULT;
+
+	/**
 	 * @param array|\Traversable $nodes
 	 * @param string $keyspace
 	 * @param array $options
@@ -328,8 +333,8 @@ class Connection {
 	 * @return Response\Response
 	 */
 	public function querySync($cql, array $values = [], $consistency = null, array $options = []){
-		$request = new Request\Query($cql, $values, $consistency, $options);
-		
+		$request = new Request\Query($cql, $values, $consistency === null ? $this->consistency : $consistency, $options);
+
 		return $this->syncRequest($request);
 	}
 	
@@ -343,8 +348,8 @@ class Connection {
 	 * @return Statement
 	 */
 	public function queryAsync($cql, array $values = [], $consistency = null, array $options = []){
-		$request = new Request\Query($cql, $values, $consistency, $options);
-		
+		$request = new Request\Query($cql, $values, $consistency === null ? $this->consistency : $consistency, $options);
+
 		return $this->asyncRequest($request);
 	}
 	
@@ -360,5 +365,13 @@ class Connection {
 			return;
 		
 		return $this->syncRequest(new Request\Query("USE {$this->keyspace};"));
+	}
+	
+	/**
+	 * @param int  $consistency
+	 */
+	public function setConsistency($consistency)
+	{
+		$this->consistency = $consistency;
 	}
 }
