@@ -33,6 +33,11 @@ Append dependency into composer.json
 	...
 ```
 
+Also you can just fetch project from Github and include in your code:
+```
+require 'php-cassandra-folder-on-your-computer/php-cassandra.php';
+```
+
 ## Basic Using
 
 ```php
