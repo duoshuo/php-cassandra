@@ -55,10 +55,10 @@ class Query extends Request{
 	 * @param int $consistency
 	 * @param array $options
 	 */
-	public function __construct($cql, $values = [], $consistency = null, $options = []) {
+	public function __construct($cql, $values = [], $consistency, $options = []) {
 		$this->_cql = $cql;
 		$this->_values = $values;
-		$this->_consistency = $consistency === null ? Request::CONSISTENCY_QUORUM : $consistency;
+		$this->_consistency = $consistency;
 		$this->_options = $options;
 	}
 	
