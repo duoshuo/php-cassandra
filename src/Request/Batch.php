@@ -39,9 +39,9 @@ class Batch extends Request{
 	 * @param string $consistency
 	 * @param array $options
 	 */
-	public function __construct($type = null, $consistency = null, $options = []) {
+	public function __construct($type = null, $consistency = Request::CONSISTENCY_QUORUM, $options = []) {
 		$this->_batchType = $type === null ? Batch::TYPE_LOGGED : $type;
-		$this->_consistency = $consistency === null ? Request::CONSISTENCY_QUORUM : $consistency;
+		$this->_consistency = $consistency;
 		$this->_options = $options;
 	}
 

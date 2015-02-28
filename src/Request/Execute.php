@@ -51,11 +51,11 @@ class Execute extends Request{
 	 * @param int $consistency
 	 * @param array $options
 	 */
-	public function __construct($queryId, array $values, $consistency = null, $options = []) {
+	public function __construct($queryId, array $values, $consistency, $options = []) {
 		$this->_queryId = $queryId;
 		$this->_values = $values;
 		 
-		$this->_consistency = $consistency === null ? Request::CONSISTENCY_QUORUM : $consistency;
+		$this->_consistency = $consistency;
 		$this->_options = $options;
 	}
 	
