@@ -109,14 +109,22 @@ class Connection {
 	 * @return string
 	 */
 	protected function fetchData($length) {
-		$data = '';
-		$remainder = $length;
+		$data = socket_read($this->connection, $length);
+		
+		if ($data === false){
+			$errorCode = socket_last_error($this->connection);
+			throw new Connection\Exception(socket_strerror($errorCode), $errorCode);
+		}
+		
+		$remainder = $length - strlen($data);
 
 		while($remainder > 0) {
 			$readData = socket_read($this->connection, $remainder);
 
-			if ($readData === false)
-				throw new Connection\Exception(socket_strerror(socket_last_error($this->connection)));
+			if ($readData === false){
+				$errorCode = socket_last_error($this->connection);
+				throw new Connection\Exception(socket_strerror($errorCode), $errorCode);
+			}
 
 			$data .= $readData;
 			$remainder -= strlen($readData);
@@ -239,11 +247,25 @@ class Connection {
 		if ($this->connection === null)
 			$this->connect();
 	
-		socket_write($this->connection, $request);
-		$response = $this->getResponse();
+		$requestBinary = $request->__toString();
+		$sentBytes = socket_write($this->connection, $requestBinary);
 		
-		if ($response instanceof Response\Error)
-			throw new Exception($response->getData());
+		if ($sentBytes === false){
+			$errorCode = socket_last_error($this->connection);
+			throw new Connection\Exception(socket_strerror($errorCode), $errorCode);
+		}
+		
+		while($sentBytes < strlen($requestBinary)){
+			$requestBinary = substr($requestBinary, $sentBytes);
+			$sentBytes = socket_write($this->connection, $requestBinary);
+			
+			if ($sentBytes === false){
+				$errorCode = socket_last_error($this->connection);
+				throw new Connection\Exception(socket_strerror($errorCode), $errorCode);
+			}
+		}
+		
+		$response = $this->getResponse();
 
 		return $response;
 	}
@@ -259,7 +281,24 @@ class Connection {
 		
 		$streamId = $this->_getNewStreamId();
 		$request->setStream($streamId);
-		socket_write($this->connection, $request);
+		
+		$requestBinary = $request->__toString();
+		$sentBytes = socket_write($this->connection, $requestBinary);
+		
+		if ($sentBytes === false){
+			$errorCode = socket_last_error($this->connection);
+			throw new Connection\Exception(socket_strerror($errorCode), $errorCode);
+		}
+		
+		while($sentBytes < strlen($requestBinary)){
+			$requestBinary = substr($requestBinary, $sentBytes);
+			$sentBytes = socket_write($this->connection, $requestBinary);
+			
+			if ($sentBytes === false){
+				$errorCode = socket_last_error($this->connection);
+				throw new Connection\Exception(socket_strerror($errorCode), $errorCode);
+			}
+		}
 		
 		return $this->_statements[$streamId] = new Statement($this, $streamId);
 	}

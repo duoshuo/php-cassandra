@@ -54,16 +54,23 @@ class Node {
 
 		$this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
 
-		if ($this->socket === false)
-			throw new Exception(socket_strerror(socket_last_error()));
+		if ($this->socket === false){
+			$errorCode = socket_last_error($this->socket);
+			throw new Exception(socket_strerror($errorCode), $errorCode);
+		}
 
 		socket_set_option($this->socket, getprotobyname('TCP'), TCP_NODELAY, 1);
 		
 		foreach($this->_options['socket'] as $optname => $optval)
 			socket_set_option($this->socket, SOL_SOCKET, $optname, $optval);
 		
-		if (!socket_connect($this->socket, $this->_options['host'], $this->_options['port']))
-			throw new Exception("Unable to connect to Cassandra node: {$this->_options['host']}:{$this->_options['port']}");
+		$result = socket_connect($this->socket, $this->_options['host'], $this->_options['port']);
+		
+		if ($result === false){
+			$errorCode = socket_last_error($this->socket);
+			//Unable to connect to Cassandra node: {$this->_options['host']}:{$this->_options['port']}
+			throw new Exception(socket_strerror($errorCode), $errorCode);
+		}
 
 		return $this->socket;
 	}
