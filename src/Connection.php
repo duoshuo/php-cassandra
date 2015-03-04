@@ -70,7 +70,7 @@ class Connection {
 	protected function _connect() {
 		foreach($this->_nodes as $options){
 			try {
-				if (isset($options['class'])){
+				if (is_array($options) && isset($options['class'])){
 					$className = $options['class'];
 					$this->_node = new $className($options);
 				}

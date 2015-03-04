@@ -60,8 +60,8 @@ $nodes = [
 // Create a connection.
 $connection = new Cassandra\Connection($nodes, 'my_keyspace');
 
-// Set consistency level for farther requests (default is CONSISTENCY_QUORUM)
-$connection->setConsistency(Request::CONSISTENCY_ONE);
+// Set consistency level for farther requests (default is CONSISTENCY_ONE)
+$connection->setConsistency(Request::CONSISTENCY_QUORUM);
 
 // Run query synchronously.
 $response = $connection->querySync('SELECT * FROM "users" WHERE "id" = ?', [new Cassandra\Type\Uuid('c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc')]);
