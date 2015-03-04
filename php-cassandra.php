@@ -1,4 +1,8 @@
 <?php
+/* This file can be used instead of install with composer.
+ * Just include "require 'PATH/php-cassandra/php-cassandra.php';" to your code (where PATH is path to php-cassandra folder).
+ */
+
 require 'src/Exception.php';
 
 require 'src/Type/Base.php';
