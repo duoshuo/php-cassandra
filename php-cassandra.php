@@ -1,4 +1,6 @@
 <?php
+require 'src/Exception.php';
+
 require 'src/Type/Base.php';
 require 'src/Type/Varchar.php';
 require 'src/Type/Ascii.php';
@@ -25,8 +27,8 @@ require 'src/Type/Varint.php';
 
 require 'src/Protocol/Frame.php';
 
-require 'src/Connection/Exception.php';
-require 'src/Connection/Node.php';
+require 'src/Connection/SocketException.php';
+require 'src/Connection/Socket.php';
 
 require 'src/Request/Request.php';
 require 'src/Request/AuthResponse.php';
@@ -51,6 +53,4 @@ require 'src/Response/Result.php';
 require 'src/Response/Supported.php';
 
 require 'src/Connection.php';
-require 'src/Exception.php';
 require 'src/Statement.php';
-?>

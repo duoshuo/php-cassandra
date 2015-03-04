@@ -8,29 +8,24 @@ class Connection {
 	 * Connection options
 	 * @var array
 	 */
-	protected $options = [
+	protected $_options = [
 		'CQL_VERSION' => '3.0.0'
 	];
 
 	/**
 	 * @var string
 	 */
-	protected $keyspace;
+	protected $_keyspace;
 
 	/**
 	 * @var array|\Traversable
 	 */
-	protected $nodes;
+	protected $_nodes;
 
 	/**
-	 * @var Node
+	 * @var Connection\Socket
 	 */
-	protected $node;
-	
-	/**
-	 * @var resource
-	 */
-	protected $connection;
+	protected $_node;
 	
 	/**
 	 * @var int
@@ -52,7 +47,7 @@ class Connection {
 	/**
 	 * @var int
 	 */
-	protected $consistency = Request\Request::CONSISTENCY_QUORUM;
+	protected $_consistency = Request\Request::CONSISTENCY_ONE;
 
 	/**
 	 * @param array|\Traversable $nodes
@@ -63,9 +58,9 @@ class Connection {
 		if (is_array($nodes))
 			shuffle($nodes);
 		
-		$this->nodes = $nodes;
-		$this->options = array_merge($this->options, $options);
-		$this->keyspace = $keyspace;
+		$this->_nodes = $nodes;
+		$this->_options = array_merge($this->_options, $options);
+		$this->_keyspace = $keyspace;
 		$this->_recycledStreams = new \SplQueue();
 	}
 	
@@ -73,12 +68,17 @@ class Connection {
 	 * 
 	 */
 	protected function _connect() {
-		foreach($this->nodes as $options){
+		foreach($this->_nodes as $options){
 			try {
-				$this->node = new Connection\Node($options);
-				$this->connection = $this->node->getConnection();
+				if (isset($options['class'])){
+					$className = $options['class'];
+					$this->_node = new $className($options);
+				}
+				else{
+					$this->_node = new Connection\Socket($options);
+				}
 				return;
-			} catch (Connection\Exception $e) {
+			} catch (Exception $e) {
 				continue;
 			}
 		}
@@ -90,47 +90,17 @@ class Connection {
 	 * @return bool
 	 */
 	public function disconnect() {
-		if ($this->connection === null)
+		if ($this->_node === null)
 			return true;
 		
-		return socket_shutdown($this->connection);
+		return $this->_node->close();
 	}
 	
 	/**
 	 * @return bool
 	 */
 	public function isConnected() {
-		return $this->connection !== null;
-	}
-	
-	/**
-	 * @param $length
-	 * @throws Connection\Exception
-	 * @return string
-	 */
-	protected function fetchData($length) {
-		$data = socket_read($this->connection, $length);
-		
-		if ($data === false){
-			$errorCode = socket_last_error($this->connection);
-			throw new Connection\Exception(socket_strerror($errorCode), $errorCode);
-		}
-		
-		$remainder = $length - strlen($data);
-
-		while($remainder > 0) {
-			$readData = socket_read($this->connection, $remainder);
-
-			if ($readData === false){
-				$errorCode = socket_last_error($this->connection);
-				throw new Connection\Exception(socket_strerror($errorCode), $errorCode);
-			}
-
-			$data .= $readData;
-			$remainder -= strlen($readData);
-		}
-
-		return $data;
+		return $this->_node !== null;
 	}
 	
 	/**
@@ -161,9 +131,9 @@ class Connection {
 	 * @return Response\Response
 	 */
 	protected function _getResponse() {
-		$header = unpack('Cversion/Cflags/nstream/Copcode/Nlength', $this->fetchData(9));
+		$header = unpack('Cversion/Cflags/nstream/Copcode/Nlength', $this->_node->read(9));
 		if ($header['length']) {
-			$body = $this->fetchData($header['length']);
+			$body = $this->_node->read($header['length']);
 		} else {
 			$body = '';
 		}
@@ -211,7 +181,7 @@ class Connection {
 	 * @return Connection\Node
 	 */
 	public function getNode() {
-		return $this->node;
+		return $this->_node;
 	}
 
 	/**
@@ -220,20 +190,20 @@ class Connection {
 	 * @return bool
 	 */
 	public function connect() {
-		if ($this->connection !== null)
+		if ($this->_node !== null)
 			return true;
 		
 		$this->_connect();
 		
-		$response = $this->syncRequest(new Request\Startup($this->options));
+		$response = $this->syncRequest(new Request\Startup($this->_options));
 		
 		if ($response instanceof Response\Authenticate){
-			$nodeOptions = $this->node->getOptions();
+			$nodeOptions = $this->_node->getOptions();
 			$this->syncRequest(new Request\AuthResponse($nodeOptions['username'], $nodeOptions['password']));
 		}
 		
-		if (!empty($this->keyspace))
-			$this->syncRequest(new Request\Query("USE {$this->keyspace};"));
+		if (!empty($this->_keyspace))
+			$this->syncRequest(new Request\Query("USE {$this->_keyspace};"));
 		
 		return true;
 	}
@@ -244,30 +214,12 @@ class Connection {
 	 * @return Response\Response
 	 */
 	public function syncRequest(Request\Request $request) {
-		if ($this->connection === null)
+		if ($this->_node === null)
 			$this->connect();
-	
-		$requestBinary = $request->__toString();
-		$sentBytes = socket_write($this->connection, $requestBinary);
 		
-		if ($sentBytes === false){
-			$errorCode = socket_last_error($this->connection);
-			throw new Connection\Exception(socket_strerror($errorCode), $errorCode);
-		}
+		$this->_node->write($request->__toString());
 		
-		while($sentBytes < strlen($requestBinary)){
-			$requestBinary = substr($requestBinary, $sentBytes);
-			$sentBytes = socket_write($this->connection, $requestBinary);
-			
-			if ($sentBytes === false){
-				$errorCode = socket_last_error($this->connection);
-				throw new Connection\Exception(socket_strerror($errorCode), $errorCode);
-			}
-		}
-		
-		$response = $this->getResponse();
-
-		return $response;
+		return $this->getResponse();
 	}
 	
 	/**
@@ -276,29 +228,13 @@ class Connection {
 	 * @return Statement
 	 */
 	public function asyncRequest(Request\Request $request) {
-		if ($this->connection === null)
+		if ($this->_node === null)
 			$this->connect();
 		
 		$streamId = $this->_getNewStreamId();
 		$request->setStream($streamId);
 		
-		$requestBinary = $request->__toString();
-		$sentBytes = socket_write($this->connection, $requestBinary);
-		
-		if ($sentBytes === false){
-			$errorCode = socket_last_error($this->connection);
-			throw new Connection\Exception(socket_strerror($errorCode), $errorCode);
-		}
-		
-		while($sentBytes < strlen($requestBinary)){
-			$requestBinary = substr($requestBinary, $sentBytes);
-			$sentBytes = socket_write($this->connection, $requestBinary);
-			
-			if ($sentBytes === false){
-				$errorCode = socket_last_error($this->connection);
-				throw new Connection\Exception(socket_strerror($errorCode), $errorCode);
-			}
-		}
+		$this->_node->write($request->__toString());
 		
 		return $this->_statements[$streamId] = new Statement($this, $streamId);
 	}
@@ -342,7 +278,7 @@ class Connection {
 	 * @return Response\Response
 	 */
 	public function executeSync($queryId, array $values = [], $consistency = null, array $options = []){
-		$request = new Request\Execute($queryId, $values, $consistency === null ? $this->consistency : $consistency, $options);
+		$request = new Request\Execute($queryId, $values, $consistency === null ? $this->_consistency : $consistency, $options);
 		
 		return $this->syncRequest($request);
 	}
@@ -357,7 +293,7 @@ class Connection {
 	 * @return Statement
 	 */
 	public function executeAsync($queryId, array $values = [], $consistency = null, array $options = []){
-		$request = new Request\Execute($queryId, $values, $consistency === null ? $this->consistency : $consistency, $options);
+		$request = new Request\Execute($queryId, $values, $consistency === null ? $this->_consistency : $consistency, $options);
 		
 		return $this->asyncRequest($request);
 	}
@@ -372,7 +308,7 @@ class Connection {
 	 * @return Response\Response
 	 */
 	public function querySync($cql, array $values = [], $consistency = null, array $options = []){
-		$request = new Request\Query($cql, $values, $consistency === null ? $this->consistency : $consistency, $options);
+		$request = new Request\Query($cql, $values, $consistency === null ? $this->_consistency : $consistency, $options);
 
 		return $this->syncRequest($request);
 	}
@@ -387,7 +323,7 @@ class Connection {
 	 * @return Statement
 	 */
 	public function queryAsync($cql, array $values = [], $consistency = null, array $options = []){
-		$request = new Request\Query($cql, $values, $consistency === null ? $this->consistency : $consistency, $options);
+		$request = new Request\Query($cql, $values, $consistency === null ? $this->_consistency : $consistency, $options);
 
 		return $this->asyncRequest($request);
 	}
@@ -398,19 +334,18 @@ class Connection {
 	 * @return Response\Result
 	 */
 	public function setKeyspace($keyspace) {
-		$this->keyspace = $keyspace;
+		$this->_keyspace = $keyspace;
 		
-		if ($this->connection === null)
+		if ($this->_node === null)
 			return;
 		
-		return $this->syncRequest(new Request\Query("USE {$this->keyspace};"));
+		return $this->syncRequest(new Request\Query("USE {$this->_keyspace};"));
 	}
 	
 	/**
 	 * @param int  $consistency
 	 */
-	public function setConsistency($consistency)
-	{
-		$this->consistency = $consistency;
+	public function setConsistency($consistency){
+		$this->_consistency = $consistency;
 	}
 }
