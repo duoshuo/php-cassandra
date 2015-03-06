@@ -25,74 +25,101 @@ class Error extends Response {
 	 * the exception, more content may follow. The error codes are defined in
 	 * Section 7, along with their additional content if any.
 	 *
-	 * @return string
+	 * @return array
 	 */
 	public function getData() {
 		$this->offset = 0;
-		$errorCode = $this->readInt();
+		$data = [];
+		$data['code'] = $this->readInt();
 
-		switch($errorCode){
+		switch($data['code']){
 			case self::SERVER_ERROR:
-				return "Server error: " . $this->readString();
+				$data['message'] = "Server error: " . $this->readString();
+				break;
 
 			case self::PROTOCOL_ERROR:
-				return "Protocol error: " . $this->readString();
+				$data['message'] = "Protocol error: " . $this->readString();
+				break;
 
 			case self::BAD_CREDENTIALS:
-				return "Bad credentials: " . $this->readString();
+				$data['message'] = "Bad credentials: " . $this->readString();
+				break;
 
 			case self::UNAVAILABLE_EXCEPTION:
-				return "Unavailable exception. Error data: " . var_export([
+				$data['message'] = "Unavailable exception. Error data: " . var_export([
 						'consistency' => $this->readInt(),
 						'node' => $this->readInt(),
 						'replica' => $this->readInt()
 					], true);
+				break;
 
 			case self::OVERLOADED:
-				return "Overloaded: " . $this->readString();
+				$data['message'] = "Overloaded: " . $this->readString();
+				break;
 
 			case self::IS_BOOTSTRAPPING:
-				return "Is_bootstrapping: " . $this->readString();
+				$data['message'] = "Is_bootstrapping: " . $this->readString();
+				break;
 
 			case self::TRUNCATE_ERROR:
-				return "Truncate_error: " . $this->readString();
+				$data['message'] = "Truncate_error: " . $this->readString();
+				break;
 
 			case self::WRITE_TIMEOUT:
-				return "Write_timeout. Error data: " . var_export([
+				$data['message'] = "Write_timeout. Error data: " . var_export([
 						'consistency' => $this->readInt(),
 						'node' => $this->readInt(),
 						'replica' => $this->readInt(),
 						'writeType' => $this->readString()
 					], true);
+				break;
 
 			case self::READ_TIMEOUT:
-				return "Read_timeout. Error data: " . var_export([
+				$data['message'] = "Read_timeout. Error data: " . var_export([
 						'consistency' => $this->readInt(),
 						'node' => $this->readInt(),
 						'replica' => $this->readInt(),
 						'dataPresent' => $this->readChar()
 					], true);
+				break;
 
 			case self::SYNTAX_ERROR:
-				return "Syntax_error: " . $this->readString();
+				$data['message'] = "Syntax_error: " . $this->readString();
+				break;
 
 			case self::UNAUTHORIZED:
-				return "Unauthorized: " . $this->readString();
+				$data['message'] = "Unauthorized: " . $this->readString();
+				break;
 
 			case self::INVALID:
-				return "Invalid: " . $this->readString();
+				$data['message'] = "Invalid: " . $this->readString();
+				break;
 
 			case self::CONFIG_ERROR:
-				return "Config_error: " . $this->readString();
+				$data['message'] = "Config_error: " . $this->readString();
+				break;
 
 			case self::ALREADY_EXIST:
-				return "Already_exists: " . $this->readString();
+				$data['message'] = "Already_exists: " . $this->readString();
+				break;
 
 			case self::UNPREPARED:
-				return "Unprepared: " . $this->readShort();
+				$data['message'] = "Unprepared: " . $this->readShort();
+				break;
 
 			default:
-				return 'Unknown error';
+				$data['message'] = 'Unknown error';
 		}
+		
+		return $data;
+	}
+	
+	/**
+	 * 
+	 * @return Exception
+	 */
+	public function getException(){
+		$data = $this->getData();
+		return new Exception($data['message'], $data['code']);
 	}
 }

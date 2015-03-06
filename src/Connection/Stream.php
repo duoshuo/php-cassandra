@@ -20,22 +20,10 @@ class Stream {
 	];
 
 	/**
-	 * @param string|array $options
+	 * @param array $options
 	 */
-	public function __construct($options) {
-		if (is_string($options)){
-			$pos = strpos($options, ':');
-			if ($pos === false) {
-				$this->_options['host'] = $options;
-			}
-			else{
-				$this->_options['host'] = substr($options, 0, $pos);
-				$this->_options['port'] = (int) substr($options, $pos + 1);
-			}
-		}
-		else{
-			$this->_options = array_merge($this->_options, $options);
-		}
+	public function __construct(array $options) {
+		$this->_options = array_merge($this->_options, $options);
 
 		$this->_connect();
 	}
@@ -48,11 +36,10 @@ class Stream {
 	protected function _connect() {
 		if (!empty($this->_stream)) return $this->_stream;
 
-		$errorCode = 0;
-		$this->_stream = fsockopen($this->_options['host'], $this->_options['port'], $errorCode);
+		$this->_stream = fsockopen($this->_options['host'], $this->_options['port'], $errorCode, $errorMessage);
 
 		if ($this->_stream === false){
-			throw new Connection\Exception(socket_strerror($errorCode));
+			throw new StreamException($errorMessage, $errorCode);
 		}
 
 		stream_set_timeout($this->_stream,$this->_options['timeout']);
@@ -72,22 +59,23 @@ class Stream {
 	 */
 	public function read($length) {
 		$data = '';
-		$remainder = $length;
-
-		for(;$length > 0;$length -= strlen($readData)) {
-			$readData = fread($this->_stream,1);
+		do{
+			$readData = fread($this->_stream, $length);
 
 			if (feof($this->_stream))
-				throw new Connection\Exception('Connection reset by peer');
+				throw new StreamException('Connection reset by peer');
 
 			if (stream_get_meta_data($this->_stream)['timed_out'])
-				throw new Connection\Exception('Connection timed out');
+				throw new StreamException('Connection timed out');
 
 			if (strlen($readData) == 0)
-				throw new Connection\Exception("Unknown error");
+				throw new StreamException("Unknown error");
 
 			$data .= $readData;
+			$length -= strlen($readData);
 		}
+		while($length > 0);
+		
 		return $data;
 	}
 
@@ -97,18 +85,21 @@ class Stream {
 	 * @throws SocketException
 	 */
 	public function write($binary){
-	   for ($written = 0; $written < strlen($binary); $written += $fwrite) {
-	        $fwrite = fwrite($this->_stream, substr($binary, $written));
-
-	        if (feof($this->_stream))
-				throw new Connection\Exception('Connection reset by peer');
-
-	        if (stream_get_meta_data($this->_stream)['timed_out'])
-				throw new Connection\Exception('Connection timed out');
-
-	        if ($fwrite == 0)
-				throw new Connection\SocketException("Uknown error");
-	    }
+		do{
+			$sentBytes = fwrite($this->_stream, $binary);
+			
+			if (feof($this->_stream))
+				throw new StreamException('Connection reset by peer');
+			
+			if (stream_get_meta_data($this->_stream)['timed_out'])
+				throw new StreamException('Connection timed out');
+			
+			if ($sentBytes == 0)
+				throw new StreamException("Uknown error");
+			
+			$binary = substr($binary, $sentBytes);
+		}
+		while(!empty($binary));
 	}
 
 	public function close(){

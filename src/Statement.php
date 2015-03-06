@@ -24,10 +24,18 @@ class Statement{
 		$this->_streamId = $streamId;		
 	}
 	
+	/**
+	 * 
+	 * @throws Response\Exception
+	 * @return Response\Response
+	 */
 	public function getResponse(){
 		if($this->_response === null){
-			return $this->_connection->getResponse($this->_streamId);
+			$this->_connection->getResponse($this->_streamId);
 		}
+		
+		if ($this->_response instanceof Response\Error)
+			throw $this->_response->getException();
 		
 		return $this->_response;
 	}

@@ -23,25 +23,13 @@ class Socket {
 	];
 
 	/**
-	 * @param string|array $options
+	 * @param array $options
 	 */
-	public function __construct($options) {
-		if (is_string($options)){
-			$pos = strpos($options, ':');
-			if ($pos === false) {
-				$this->_options['host'] = $options;
-			}
-			else{
-				$this->_options['host'] = substr($options, 0, $pos);
-				$this->_options['port'] = (int) substr($options, $pos + 1);
-			}
+	public function __construct(array $options) {
+		if (isset($options['socket'])) {
+			$options['socket'] += $this->_options['socket'];
 		}
-		else{
-			if (isset($options['socket'])) {
-				$options['socket'] += $this->_options['socket'];
-			}
-			$this->_options = array_merge($this->_options, $options);
-		}
+		$this->_options = array_merge($this->_options, $options);
 		
 		$this->_connect();
 	}
@@ -119,22 +107,16 @@ class Socket {
 	 * @throws SocketException
 	 */
 	public function write($binary){
-		$sentBytes = socket_write($this->_socket, $binary);
-		
-		if ($sentBytes === false){
-			$errorCode = socket_last_error($this->_socket);
-			throw new SocketException(socket_strerror($errorCode), $errorCode);
-		}
-		
-		while($sentBytes < strlen($binary)){
-			$binary = substr($binary, $sentBytes);
+		do{
 			$sentBytes = socket_write($this->_socket, $binary);
-				
+			
 			if ($sentBytes === false){
 				$errorCode = socket_last_error($this->_socket);
 				throw new SocketException(socket_strerror($errorCode), $errorCode);
 			}
+			$binary = substr($binary, $sentBytes);
 		}
+		while(!empty($binary));
 	}
 	
 	public function close(){

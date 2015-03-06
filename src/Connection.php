@@ -23,7 +23,7 @@ class Connection {
 	protected $_nodes;
 
 	/**
-	 * @var Connection\Socket
+	 * @var Connection\Socket|Connection\Stream
 	 */
 	protected $_node;
 	
@@ -65,12 +65,19 @@ class Connection {
 	}
 	
 	/**
-	 * 
+	 * @throws Exception
 	 */
 	protected function _connect() {
 		foreach($this->_nodes as $options){
 			try {
-				if (is_array($options) && isset($options['class'])){
+				if (is_string($options)){
+					$pos = strpos($options, ':');
+					$options = $pos === false
+						? ['host' => $options,]
+						: ['host' => substr($options, 0, $pos), 'port'	=> (int) substr($options, $pos + 1),];
+				}
+				
+				if (isset($options['class'])){
 					$className = $options['class'];
 					$this->_node = new $className($options);
 				}
@@ -219,7 +226,12 @@ class Connection {
 		
 		$this->_node->write($request->__toString());
 		
-		return $this->getResponse();
+		$response = $this->getResponse();
+		
+		if ($response instanceof Response\Error)
+			throw $response->getException();
+		
+		return $response;
 	}
 	
 	/**
