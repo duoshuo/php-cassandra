@@ -90,13 +90,13 @@ class Request implements Frame{
 	/**
 	 * 
 	 * @param array $values
-	 * @throws Exception
+	 * @throws Type\Exception
 	 * @return string
 	 */
 	public static function valuesBinary(array $values, $namesForValues = false) {
 		$valuesBinary = pack('n', count($values));
-		$values = array_change_key_case($values);
 		
+		$index = 0;
 		foreach($values as $name => $value) {
 			switch (true) {
 				case $value instanceof Type\Base:
@@ -118,8 +118,16 @@ class Request implements Frame{
 					throw new Type\Exception('Unknown type.');
 			}
 
-			if ($namesForValues)
-				$valuesBinary .= pack('n', strlen($name)) . $name;
+			if ($namesForValues){
+				$valuesBinary .= pack('n', strlen($name)) . strtolower($name);
+			}
+			else{
+				/**
+				 * @see https://github.com/duoshuo/php-cassandra/issues/29
+				 */
+				if ($index++ !== $name)
+					throw new Type\Exception('$values should be an sequential array, associative array given.  Or you can set "names_for_values" option to true.');
+			}
 
 			$valuesBinary .= $binary === null
 				? "\xff\xff\xff\xff"
