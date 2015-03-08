@@ -33,6 +33,7 @@ require 'src/Protocol/Frame.php';
 
 require 'src/Connection/SocketException.php';
 require 'src/Connection/Socket.php';
+require 'src/Connection/StreamException.php';
 require 'src/Connection/Stream.php';
 
 require 'src/Request/Request.php';

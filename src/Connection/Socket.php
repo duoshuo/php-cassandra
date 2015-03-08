@@ -49,7 +49,7 @@ class Socket {
 			throw new SocketException(socket_strerror($errorCode), $errorCode);
 		}
 
-		socket_set_option($this->_socket, getprotobyname('TCP'), TCP_NODELAY, 1);
+		socket_set_option($this->_socket, SOL_TCP, TCP_NODELAY, 1);
 		
 		foreach($this->_options['socket'] as $optname => $optval)
 			socket_set_option($this->_socket, SOL_SOCKET, $optname, $optval);

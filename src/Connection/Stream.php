@@ -17,6 +17,8 @@ class Stream {
 		'username'	=> null,
 		'password'	=> null,
 		'timeout'	=> 30,
+		'connectTimeout'=>5,
+		'persistent'=> false,
 	];
 
 	/**
@@ -36,7 +38,9 @@ class Stream {
 	protected function _connect() {
 		if (!empty($this->_stream)) return $this->_stream;
 
-		$this->_stream = fsockopen($this->_options['host'], $this->_options['port'], $errorCode, $errorMessage);
+		$this->_stream = $this->_options['persistent']
+			? pfsockopen($this->_options['host'], $this->_options['port'], $errorCode, $errorMessage, $this->_options['connectTimeout'])
+			: fsockopen($this->_options['host'], $this->_options['port'], $errorCode, $errorMessage, $this->_options['connectTimeout']);
 
 		if ($this->_stream === false){
 			throw new StreamException($errorMessage, $errorCode);
