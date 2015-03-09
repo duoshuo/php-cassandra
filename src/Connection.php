@@ -71,10 +71,21 @@ class Connection {
 		foreach($this->_nodes as $options){
 			try {
 				if (is_string($options)){
+					$prefix ='';
+					if (strpos($options , 'ssl://') == 0 || strpos($options , 'tls://') == 0){
+						$prefix  = substr($options,0,6);
+						$options = substr($options,6);
+					}
+
 					$pos = strpos($options, ':');
 					$options = $pos === false
 						? ['host' => $options,]
 						: ['host' => substr($options, 0, $pos), 'port'	=> (int) substr($options, $pos + 1),];
+
+					if ($prefix != ''){
+						$options['host']  =  $prefix . $options['host'];
+						$options['class'] =  'Cassandra\Connection\Stream';
+					}
 				}
 				
 				if (isset($options['class'])){
