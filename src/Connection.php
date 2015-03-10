@@ -69,27 +69,31 @@ class Connection {
 	 */
 	protected function _connect() {
 		foreach($this->_nodes as $options){
-			try {
-				if (is_string($options)){
-					if (!preg_match('/^(((tcp|udp|unix|ssl|tls):\/\/)?[\w\.\-]+)(\:(\d+))?/i', $options, $matches))
-						throw new Exception('Invalid host:' . $options);
-					
-					$options = [ 'host' => $matches[1],];
-					
-					if (!empty($matches[5]))
-						$options['port'] = $matches[5];
-					
-					// Use Connection\Stream when protocol prefix is defined.
-					$this->_node = empty($matches[2]) ? new Connection\Socket($options) : new Connection\Stream($options);
-					return;
-				}
+			if (is_string($options)){
+				if (!preg_match('/^(((tcp|udp|unix|ssl|tls):\/\/)?[\w\.\-]+)(\:(\d+))?/i', $options, $matches))
+					throw new Exception('Invalid host: ' . $options);
 				
-				$className = isset($options['class']) ? $options['class'] : 'Cassandra\Connection\Socket';
-				$this->_node = new $className($options);
-				return;
-			} catch (Exception $e) {
-				continue;
+				$options = [ 'host' => $matches[1],];
+				
+				if (!empty($matches[5]))
+					$options['port'] = $matches[5];
+				
+				// Use Connection\Stream when protocol prefix is defined.
+				try {
+					$this->_node = empty($matches[2]) ? new Connection\Socket($options) : new Connection\Stream($options);
+				} catch (Exception $e) {
+					continue;
+				}
 			}
+			else{
+				$className = isset($options['class']) ? $options['class'] : 'Cassandra\Connection\Socket';
+				try {
+					$this->_node = new $className($options);
+				} catch (Exception $e) {
+					continue;
+				}
+			}
+			return;
 		}
 		
 		throw new Exception("Unable to connect to all Cassandra nodes.");
