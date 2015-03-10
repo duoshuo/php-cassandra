@@ -175,10 +175,10 @@ class Request implements Frame{
 		
 		if (!empty($values)) {
 			$flags |= Query::FLAG_VALUES;
-			$optional .= Request::valuesBinary($values, isset($options['names_for_values']));
+			$optional .= Request::valuesBinary($values, !empty($options['names_for_values']));
 		}
 
-		if (isset($options['skip_metadata']))
+		if (!empty($options['skip_metadata']))
 			$flags |= Query::FLAG_SKIP_METADATA;
 
 		if (isset($options['page_size'])) {
@@ -202,7 +202,7 @@ class Request implements Frame{
 			$optional .= $bigint->getBinary();
 		}
 
-		if (isset($options['names_for_values']))
+		if (!empty($options['names_for_values']))
 			$flags |= Query::FLAG_WITH_NAMES_FOR_VALUES;
 
 		return pack('n', $consistency) . pack('C', $flags) . $optional;

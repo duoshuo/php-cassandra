@@ -65,7 +65,7 @@ class Batch extends Request{
 		$binary = pack('C', 0);
 	
 		$binary .= pack('N', strlen($cql)) . $cql;
-		$binary .= Request::valuesBinary($values);
+		$binary .= Request::valuesBinary($values, !empty($this->_options['names_for_values']));
 		
 		$this->_queryArray[] = $binary;
 		
@@ -82,7 +82,7 @@ class Batch extends Request{
 		$binary = pack('C', 1);
 		
 		$binary .= pack('n', strlen($queryId)) . $queryId;
-		$binary .= Request::valuesBinary($values);
+		$binary .= Request::valuesBinary($values, !empty($this->_options['names_for_values']));
 		
 		$this->_queryArray[] = $binary;
 		

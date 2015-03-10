@@ -71,30 +71,21 @@ class Connection {
 		foreach($this->_nodes as $options){
 			try {
 				if (is_string($options)){
-					$prefix ='';
-					if (strpos($options , 'ssl://') == 0 || strpos($options , 'tls://') == 0){
-						$prefix  = substr($options,0,6);
-						$options = substr($options,6);
-					}
-
-					$pos = strpos($options, ':');
-					$options = $pos === false
-						? ['host' => $options,]
-						: ['host' => substr($options, 0, $pos), 'port'	=> (int) substr($options, $pos + 1),];
-
-					if ($prefix != ''){
-						$options['host']  =  $prefix . $options['host'];
-						$options['class'] =  'Cassandra\Connection\Stream';
-					}
+					if (!preg_match('/^(((tcp|udp|unix|ssl|tls):\/\/)?[\w\.\-]+)(\:(\d+))?/i', $options, $matches))
+						throw new Exception('Invalid host:' . $options);
+					
+					$options = [ 'host' => $matches[1],];
+					
+					if (!empty($matches[5]))
+						$options['port'] = $matches[5];
+					
+					// Use Connection\Stream when protocol prefix is defined.
+					$this->_node = empty($matches[2]) ? new Connection\Socket($options) : new Connection\Stream($options);
+					return;
 				}
 				
-				if (isset($options['class'])){
-					$className = $options['class'];
-					$this->_node = new $className($options);
-				}
-				else{
-					$this->_node = new Connection\Socket($options);
-				}
+				$className = isset($options['class']) ? $options['class'] : 'Cassandra\Connection\Socket';
+				$this->_node = new $className($options);
 				return;
 			} catch (Exception $e) {
 				continue;
