@@ -212,6 +212,10 @@ class Connection {
 		
 		if ($response instanceof Response\Authenticate){
 			$nodeOptions = $this->_node->getOptions();
+			
+			if (empty($nodeOptions['username']) || empty($nodeOptions['password']))
+				throw new Exception('Username and password are required.');
+			
 			$this->syncRequest(new Request\AuthResponse($nodeOptions['username'], $nodeOptions['password']));
 		}
 		
