@@ -9,6 +9,7 @@ Cassandra client library for PHP, which support Protocol v3 (Cassandra 2.1) and 
 
 ## Features
 * Using Protocol v3 (Cassandra 2.1)
+* Support ssl/tls with stream transport layer
 * Support asynchronous and synchronous request
 * Support for logged, unlogged and counter batches
 * The ability to specify the consistency, "serial consistency" and all flags defined in the protocol
@@ -16,6 +17,8 @@ Cassandra client library for PHP, which support Protocol v3 (Cassandra 2.1) and 
 * Support all data types conversion and binding, including collection types, tuple and UDT
 * Support conditional update/insert
 * 5 fetch methods (fetchAll, fetchRow, fetchPairs, fetchCol, fetchOne)
+* Two transport layers - socket and stream.
+* Using exceptions to report errors
 * 800% performance improvement(async mode) than other php cassandra client libraries
 
 ## Installation
@@ -48,12 +51,28 @@ $nodes = [
 	'192.168.0.2:9160',	// simple way, hostname with port 
 	[				// advanced way, array including username, password and socket options
 		'host'		=> '10.205.48.70',
+		'port'		=> 9042, //default 9042
+		'username'	=> 'admin',
+		'password'	=> 'pass',
+		'socket'	=> [SO_RCVTIMEO => ["sec" => 10, "usec" => 0], //socket transport only
+		],
+	],
+	[				// advanced way, array including username, password and socket options
+		'host'		=> '10.205.48.70',
 		'port'		=> 9042,
 		'username'	=> 'admin',
 		'password'	=> 'pass',
-		'socket'	=> [
-			SO_RCVTIMEO => ["sec" => 10, "usec" => 0],
-		],
+		'class'		=> 'Cassandra\Connection\Stream',//use stream instead of socket, default socket. Stream may not work in some environment
+		'connectTimeout => 10, // connection timeout, default 5,  stream transport only
+		'timeout'	=> 30, // write/recv timeout, default 30, stream transport only
+		'persistent'	=> true, // use persistent PHP connection, default false,  stream transport only  
+	],
+	[				// advanced way, array including username, password and socket options
+		'host'		=> 'ssl://10.205.48.70',// or 'tls://10.205.48.70'
+		'port'		=> 9042,
+		'username'	=> 'admin',
+		'password'	=> 'pass',
+		'class'		=> 'Cassandra\Connection\Stream',//stream must be used for ssl or tls
 	],
 ];
 
@@ -64,7 +83,13 @@ $connection = new Cassandra\Connection($nodes, 'my_keyspace');
 $connection->setConsistency(Request::CONSISTENCY_QUORUM);
 
 // Run query synchronously.
-$response = $connection->querySync('SELECT * FROM "users" WHERE "id" = ?', [new Cassandra\Type\Uuid('c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc')]);
+try
+{
+	$response = $connection->querySync('SELECT * FROM "users" WHERE "id" = ?', [new Cassandra\Type\Uuid('c5420d81-499e-4c9c-ac0c-fa6ba3ebc2bc')]);
+}
+catch (Cassandra\Exception $e)
+{
+}
 ```
 
 ## Fetch Data
@@ -90,12 +115,22 @@ $value = $response->fetchOne();		// mixed
 
 ```php
 // Return a statement immediately
-$statement = $connection->queryAsync($cql);
+try
+{
+	$statement1 = $connection->queryAsync($cql1);
+	$statement2 = $connection->queryAsync($cql2);
 
-// Wait until received the response
-$response = $statement->getResponse();
+	// Wait until received the response, can be reversed order
+	$response2 = $statement2->getResponse();
+	$response1 = $statement1->getResponse();
 
-$rows = $response->fetchAll();
+
+	$rows1 = $response1->fetchAll();
+	$rows2 = $response2->fetchAll();
+}
+catch (Cassandra\Exception $e)
+{
+}
 ```
 
 ## Using preparation and data binding
