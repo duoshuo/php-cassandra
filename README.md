@@ -79,6 +79,18 @@ $nodes = [
 // Create a connection.
 $connection = new Cassandra\Connection($nodes, 'my_keyspace');
 
+//Connect
+try
+{
+	$connection->connect();
+}
+catch (Cassandra\Exception $e)
+{
+	echo 'Caught exception: ',  $e->getMessage(), "\n";
+	exit;//if connect failed it may be good idea not to continue
+}
+
+
 // Set consistency level for farther requests (default is CONSISTENCY_ONE)
 $connection->setConsistency(Request::CONSISTENCY_QUORUM);
 
