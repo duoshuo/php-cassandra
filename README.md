@@ -313,6 +313,8 @@ new Cassandra\Type\CollectionSet([
 ## Recommend Libraries
 * [shen2/fluent-cql](https://github.com/shen2/FluentCQL): write CQL in fluent interface
 * [duoshuo/uuid](https://github.com/duoshuo/uuid): generate UUID and TimeUUID
+* [shen2/crest](https://github.com/shen2/crest): Restful web API for Cassandra
+* [shen2/cadmin](https://github.com/shen2/cadmin): Web admin panel for Cassandra, like phpmyadmin
 
 ## Inspired by
 * [mauritsl/php-cassandra](https://github.com/mauritsl/php-cassandra)

@@ -136,6 +136,19 @@ class Result extends Response {
 	
 	/**
 	 * 
+	 * @return array
+	 */
+	public function getMetadata(){
+		if (empty($this->_metadata)){
+			$this->offset = 4;
+			$this->_metadata = $this->_readMetadata();
+		}
+		
+		return $this->_metadata;
+	}
+	
+	/**
+	 * 
 	 * @param string $rowClass
 	 * @return self
 	 */
