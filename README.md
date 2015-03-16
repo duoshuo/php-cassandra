@@ -48,7 +48,7 @@ require 'php-cassandra-folder-on-your-computer/php-cassandra.php';
 
 $nodes = [
 	'127.0.0.1',		// simple way, hostname only
-	'192.168.0.2:9160',	// simple way, hostname with port 
+	'192.168.0.2:9042',	// simple way, hostname with port 
 	[				// advanced way, array including username, password and socket options
 		'host'		=> '10.205.48.70',
 		'port'		=> 9042, //default 9042
@@ -57,7 +57,7 @@ $nodes = [
 		'socket'	=> [SO_RCVTIMEO => ["sec" => 10, "usec" => 0], //socket transport only
 		],
 	],
-	[				// advanced way, array including username, password and socket options
+	[				// advanced way, using Connection\Stream, persistent connection
 		'host'		=> '10.205.48.70',
 		'port'		=> 9042,
 		'username'	=> 'admin',
@@ -67,12 +67,12 @@ $nodes = [
 		'timeout'	=> 30, // write/recv timeout, default 30, stream transport only
 		'persistent'	=> true, // use persistent PHP connection, default false,  stream transport only  
 	],
-	[				// advanced way, array including username, password and socket options
+	[				// advanced way, using SSL
+		'class'		=> 'Cassandra\Connection\Stream', // "class" must be defined as "Cassandra\Connection\Stream" for ssl or tls
 		'host'		=> 'ssl://10.205.48.70',// or 'tls://10.205.48.70'
 		'port'		=> 9042,
 		'username'	=> 'admin',
 		'password'	=> 'pass',
-		'class'		=> 'Cassandra\Connection\Stream',//stream must be used for ssl or tls
 	],
 ];
 
@@ -244,6 +244,7 @@ All types are supported.
     new Cassandra\Type\CollectionSet([1, 2, 3], Cassandra\Type\Base::INT);
 
 //  Timestamp (unit: microseconds)
+    new Cassandra\Type\Timestamp((int) (microtime(true) * 1000000));
     new Cassandra\Type\Timestamp(1409830696263000);
 
 //  Uuid

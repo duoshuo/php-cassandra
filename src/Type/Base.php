@@ -74,11 +74,6 @@ abstract class Base{
 			case self::BLOB:
 				return new Blob($value);
 			case self::TIMESTAMP:
-				if (is_double($value) && preg_match('~^\d{10}(.\d+)?$~', $value)) {
-					$value = (int)str_pad(substr(str_replace('.', '', $value), 0, 13), 13, '0');
-				} elseif (strlen($value) < 13) {
-					throw new Exception('Value of timestamp must have 13 digits.');
-				}
 				return new Timestamp($value);
 			case self::COUNTER:
 				return new Counter($value);
