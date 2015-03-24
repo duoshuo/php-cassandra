@@ -146,7 +146,7 @@ class Request implements Frame{
 	public static function strictTypeValues(array $values, array $columns) {
 		$strictTypeValues = [];
 		foreach($columns as $index => $column) {
-			$key = isset($values[$column['name']]) ? $column['name'] : $index;
+			$key = array_key_exists($column['name'], $values) ? $column['name'] : $index;
 			
 			if (!isset($values[$key])){
 				$strictTypeValues[$key] = null;
