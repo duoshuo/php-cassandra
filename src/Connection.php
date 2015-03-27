@@ -144,41 +144,47 @@ class Connection {
 	 * @return Response\Response
 	 */
 	protected function _getResponse() {
-		$header = unpack('Cversion/Cflags/nstream/Copcode/Nlength', $this->_node->read(9));
-		if ($header['length']) {
-			$body = $this->_node->read($header['length']);
-		} else {
-			$body = '';
+		$version = unpack('C', $this->_node->read(1))[1];
+		switch($version) {
+			case 0x83:
+				$header = unpack('Cflags/nstream/Copcode/Nlength', $this->_node->read(8));
+				if ($header['length']) {
+					$body = $this->_node->read($header['length']);
+				} else {
+					$body = '';
+				}
+				
+				static $responseClassMap = [
+					Frame::OPCODE_ERROR			=> 'Cassandra\Response\Error',
+					Frame::OPCODE_READY			=> 'Cassandra\Response\Ready',
+					Frame::OPCODE_AUTHENTICATE	=> 'Cassandra\Response\Authenticate',
+					Frame::OPCODE_SUPPORTED		=> 'Cassandra\Response\Supported',
+					Frame::OPCODE_RESULT		=> 'Cassandra\Response\Result',
+					Frame::OPCODE_EVENT			=> 'Cassandra\Response\Event',
+					Frame::OPCODE_AUTH_SUCCESS	=> 'Cassandra\Response\AuthSuccess',
+				];
+				
+				if (!isset($responseClassMap[$header['opcode']]))
+					throw new Response\Exception('Unknown response');
+				
+				$responseClass = $responseClassMap[$header['opcode']];
+				$response = new $responseClass($header, $body);
+				
+				if ($header['stream'] !== 0){
+					if (isset($this->_statements[$header['stream']])){
+						$this->_statements[$header['stream']]->setResponse($response);
+						unset($this->_statements[$header['stream']]);
+						$this->_recycledStreams->enqueue($header['stream']);
+					}
+					elseif ($response instanceof Response\Event){
+						$this->trigger($response);
+					}
+				}
+				
+				return $response;
+			default:
+				throw new Exception('php-cassandra supports CQL binary protocol v3 only, please upgrade your Cassandra to 2.1 or later.');
 		}
-		
-		static $responseClassMap = [
-			Frame::OPCODE_ERROR			=> 'Cassandra\Response\Error',
-			Frame::OPCODE_READY			=> 'Cassandra\Response\Ready',
-			Frame::OPCODE_AUTHENTICATE	=> 'Cassandra\Response\Authenticate',
-			Frame::OPCODE_SUPPORTED		=> 'Cassandra\Response\Supported',
-			Frame::OPCODE_RESULT		=> 'Cassandra\Response\Result',
-			Frame::OPCODE_EVENT			=> 'Cassandra\Response\Event',
-			Frame::OPCODE_AUTH_SUCCESS	=> 'Cassandra\Response\AuthSuccess',
-		];
-		
-		if (!isset($responseClassMap[$header['opcode']]))
-			throw new Response\Exception('Unknown response');
-		
-		$responseClass = $responseClassMap[$header['opcode']];
-		$response = new $responseClass($header, $body);
-		
-		if ($header['stream'] !== 0){
-			if (isset($this->_statements[$header['stream']])){
-				$this->_statements[$header['stream']]->setResponse($response);
-				unset($this->_statements[$header['stream']]);
-				$this->_recycledStreams->enqueue($header['stream']);
-			}
-			elseif ($response instanceof Response\Event){
-				$this->trigger($response);
-			}
-		}
-		
-		return $response;
 	}
 	
 	/**
