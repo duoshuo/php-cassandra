@@ -17,8 +17,10 @@ trait StreamReader {
 
 	/**
 	 * Read data from stream.
+	 * 
+	 * NOTICE When $this->offset == strlen($this->data), substr() will return false.  You'd better avoid call read() when $length == 0.
 	 *
-	 * @param int $length
+	 * @param int $length  $length should be > 0.
 	 * @return string
 	 */
 	protected function read($length) {
@@ -65,7 +67,7 @@ trait StreamReader {
 	 */
 	public function readString() {
 		$length = unpack('n', $this->read(2))[1];
-		return $this->read($length);
+		return $length === 0 ? '' : $this->read($length);
 	}
 
 	/**
@@ -75,7 +77,7 @@ trait StreamReader {
 	 */
 	public function readLongString() {
 		$length = unpack('N', $this->read(4))[1];
-		return $this->read($length);
+		return $length === 0 ? '' : $this->read($length);
 	}
 
 	/**
@@ -89,7 +91,7 @@ trait StreamReader {
 			return null;
 
 		$length = unpack('N', $binaryLength)[1];
-		return $this->read($length);
+		return $length === 0 ? '' : $this->read($length);
 	}
 
 	/**
@@ -244,6 +246,7 @@ trait StreamReader {
 		$length = unpack('N', $binaryLength)[1];
 
 		// do not use $this->read() for performance
+		// substr() returns FALSE when OFFSET is equal to the length of data
 		$data = ($length == 0) ? '' : substr($this->data, $this->offset, $length);
 		$this->offset += $length;
 

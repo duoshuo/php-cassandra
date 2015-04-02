@@ -148,11 +148,7 @@ class Connection {
 		switch($version) {
 			case 0x83:
 				$header = unpack('Cflags/nstream/Copcode/Nlength', $this->_node->read(8));
-				if ($header['length']) {
-					$body = $this->_node->read($header['length']);
-				} else {
-					$body = '';
-				}
+				$body = $header['length'] === 0 ? '' : $this->_node->read($header['length']);
 				
 				static $responseClassMap = [
 					Frame::OPCODE_ERROR			=> 'Cassandra\Response\Error',
