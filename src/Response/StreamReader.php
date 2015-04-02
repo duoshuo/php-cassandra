@@ -244,7 +244,7 @@ trait StreamReader {
 		$length = unpack('N', $binaryLength)[1];
 
 		// do not use $this->read() for performance
-		$data = substr($this->data, $this->offset, $length);
+		$data = ($length == 0) ? '' : substr($this->data, $this->offset, $length);
 		$this->offset += $length;
 
 		switch ($type) {
