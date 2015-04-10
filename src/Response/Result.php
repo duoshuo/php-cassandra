@@ -69,12 +69,12 @@ class Result extends Response {
 	 * @return int|array
 	 */
 	protected function readType(){
-		$type = unpack('n', $this->read(2))[1];
+		$type = parent::readShort();
 		switch ($type) {
 			case Type\Base::CUSTOM:
 				return [
 					'type'	=> $type,
-					'name'	=> self::readString(),
+					'name'	=> parent::readString(),
 				];
 			case Type\Base::COLLECTION_LIST:
 			case Type\Base::COLLECTION_SET:
@@ -91,13 +91,13 @@ class Result extends Response {
 			case Type\Base::UDT:
 				$data = [
 					'type'		=> $type,
-					'keyspace'	=> self::readString(),
-					'name'		=> self::readString(),
+					'keyspace'	=> parent::readString(),
+					'name'		=> parent::readString(),
 					'typeMap'	=> [],
 				];
-				$length = self::readShort();
+				$length = parent::readShort();
 				for($i = 0; $i < $length; ++$i){
-					$key = self::readString();
+					$key = parent::readString();
 					$data['typeMap'][$key] = self::readType();
 				}
 				return $data;
@@ -106,7 +106,7 @@ class Result extends Response {
 					'type'	=> $type,
 					'typeList'	=>	[],
 				];
-				$length = self::readShort();
+				$length = parent::readShort();
 				for($i = 0; $i < $length; ++$i){
 					$data['typeList'][] = self::readType();
 				}
@@ -163,7 +163,10 @@ class Result extends Response {
 	 * @return array
 	 */
 	protected function _readMetadata() {
-		$metadata = unpack('Nflags/Ncolumns_count', $this->read(8));
+		$metadata = [
+			'flags' => parent::readInt(),
+			'columns_count' => parent::readInt(),
+		];
 		$flags = $metadata['flags'];
 
 		if ($flags & self::ROWS_FLAG_HAS_MORE_PAGES)
@@ -173,14 +176,14 @@ class Result extends Response {
 			$metadata['columns'] = [];
 			
 			if ($flags & self::ROWS_FLAG_GLOBAL_TABLES_SPEC) {
-				$keyspace = $this->read(unpack('n', $this->read(2))[1]);
-				$tableName = $this->read(unpack('n', $this->read(2))[1]);
+				$keyspace = parent::readString();
+				$tableName = parent::readString();
 
 				for ($i = 0; $i < $metadata['columns_count']; ++$i) {
 					$metadata['columns'][] = [
 						'keyspace' => $keyspace,
 						'tableName' => $tableName,
-						'name' => $this->read(unpack('n', $this->read(2))[1]),
+						'name' => parent::readString(),
 						'type' => self::readType()
 					];
 				}
@@ -188,9 +191,9 @@ class Result extends Response {
 			else {
 				for ($i = 0; $i < $metadata['columns_count']; ++$i) {
 					$metadata['columns'][] = [
-						'keyspace' => $this->read(unpack('n', $this->read(2))[1]),
-						'tableName' => $this->read(unpack('n', $this->read(2))[1]),
-						'name' => $this->read(unpack('n', $this->read(2))[1]),
+						'keyspace' => parent::readString(),
+						'tableName' => parent::readString(),
+						'name' => parent::readString(),
 						'type' => self::readType()
 					];
 				}
