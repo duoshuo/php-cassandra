@@ -244,6 +244,7 @@ All types are supported.
     new Cassandra\Type\CollectionSet([1, 2, 3], Cassandra\Type\Base::INT);
 
 //  Timestamp (unit: microseconds)
+//  only available on 64 bit OS !
     new Cassandra\Type\Timestamp((int) (microtime(true) * 1000000));
     new Cassandra\Type\Timestamp(1409830696263000);
 
@@ -251,6 +252,7 @@ All types are supported.
     new Cassandra\Type\Uuid('62c36092-82a1-3a00-93d1-46196ee77204');
 
 //  Timeuuid
+//  only available on 64 bit OS !
     new Cassandra\Type\Timeuuid('2dc65ebe-300b-11e4-a23b-ab416c39d509');
 
 //  Varchar
