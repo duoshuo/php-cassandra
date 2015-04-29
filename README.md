@@ -243,9 +243,9 @@ All types are supported.
 //  CollectionSet
     new Cassandra\Type\CollectionSet([1, 2, 3], Cassandra\Type\Base::INT);
 
-//  Timestamp (unit: microseconds)
-    new Cassandra\Type\Timestamp((int) (microtime(true) * 1000000));
-    new Cassandra\Type\Timestamp(1409830696263000);
+//  Timestamp (unit: millisecond)
+    new Cassandra\Type\Timestamp((int) (microtime(true) * 1000));
+    new Cassandra\Type\Timestamp(1409830696263);
 
 //  Uuid
     new Cassandra\Type\Uuid('62c36092-82a1-3a00-93d1-46196ee77204');

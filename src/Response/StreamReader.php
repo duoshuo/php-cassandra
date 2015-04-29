@@ -263,7 +263,7 @@ trait StreamReader {
 				return $value << $shift >> $shift;
 			case Type\Base::BIGINT:
 			case Type\Base::COUNTER:
-			case Type\Base::TIMESTAMP:	//	use big int to present microseconds timestamp
+			case Type\Base::TIMESTAMP:	//	use big int to present timestamp in milliseconds
 				$unpacked = unpack('N2', $data);
 				return $unpacked[1] << 32 | $unpacked[2];
 			case Type\Base::BLOB:
