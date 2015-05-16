@@ -164,7 +164,7 @@ class Connection {
 					throw new Response\Exception('Unknown response');
 				
 				$responseClass = $responseClassMap[$header['opcode']];
-				$response = new $responseClass($header, $body);
+				$response = new $responseClass($header, Response\StreamReader::createFromData($body));
 				
 				if ($header['stream'] !== 0){
 					if (isset($this->_statements[$header['stream']])){

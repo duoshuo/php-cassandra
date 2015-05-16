@@ -36,7 +36,7 @@ class Result extends Response {
 	 * @return \SplFixedArray|string|array|null
 	 */
 	public function getData() {
-		$this->offset = 4;
+		$this->_stream->offset(4);
 		switch($this->getKind()) {
 			case self::VOID:
 				return null;
@@ -45,77 +45,26 @@ class Result extends Response {
 				return $this->fetchAll();
 	
 			case self::SET_KEYSPACE:
-				return parent::readString();
+				return $this->_stream->readString();
 	
 			case self::PREPARED:
 				return [
-					'id' => parent::readString(),
+					'id' => $this->_stream->readString(),
 					'metadata' => $this->_readMetadata(),
 					'result_metadata' => $this->_readMetadata(),
 				];
 	
 			case self::SCHEMA_CHANGE:
 				return [
-					'change' => parent::readString(),
-					'keyspace' => parent::readString(),
-					'table' => parent::readString()
+					'change' => $this->_stream->readString(),
+					'keyspace' => $this->_stream->readString(),
+					'table' => $this->_stream->readString()
 				];
 		}
 	
 		return null;
 	}
 	
-	/**
-	 * @return int|array
-	 */
-	protected function readType(){
-		$type = parent::readShort();
-		switch ($type) {
-			case Type\Base::CUSTOM:
-				return [
-					'type'	=> $type,
-					'name'	=> parent::readString(),
-				];
-			case Type\Base::COLLECTION_LIST:
-			case Type\Base::COLLECTION_SET:
-				return [
-					'type'	=> $type,
-					'value'	=> self::readType(),
-				];
-			case Type\Base::COLLECTION_MAP:
-				return [
-					'type'	=> $type,
-					'key'	=> self::readType(),
-					'value'	=> self::readType(),
-				];
-			case Type\Base::UDT:
-				$data = [
-					'type'		=> $type,
-					'keyspace'	=> parent::readString(),
-					'name'		=> parent::readString(),
-					'typeMap'	=> [],
-				];
-				$length = parent::readShort();
-				for($i = 0; $i < $length; ++$i){
-					$key = parent::readString();
-					$data['typeMap'][$key] = self::readType();
-				}
-				return $data;
-			case Type\Base::TUPLE:
-				$data = [
-					'type'	=> $type,
-					'typeList'	=>	[],
-				];
-				$length = parent::readShort();
-				for($i = 0; $i < $length; ++$i){
-					$data['typeList'][] = self::readType();
-				}
-				return $data;
-			default:
-				return $type;
-		}
-	}
-
 	public function getKind(){
 		if ($this->_kind === null)
 			$this->_kind = unpack('N', substr($this->data, 0, 4))[1];
@@ -140,7 +89,7 @@ class Result extends Response {
 	 */
 	public function getMetadata(){
 		if (empty($this->_metadata)){
-			$this->offset = 4;
+			$this->_stream->offset(4);
 			$this->_metadata = $this->_readMetadata();
 		}
 		
@@ -164,37 +113,37 @@ class Result extends Response {
 	 */
 	protected function _readMetadata() {
 		$metadata = [
-			'flags' => parent::readInt(),
-			'columns_count' => parent::readInt(),
+			'flags' => $this->_stream->readInt(),
+			'columns_count' => $this->_stream->readInt(),
 		];
 		$flags = $metadata['flags'];
 
 		if ($flags & self::ROWS_FLAG_HAS_MORE_PAGES)
-			$metadata['page_state'] = parent::readBytes();
+			$metadata['page_state'] = $this->_stream->readBytes();
 
 		if (!($flags & self::ROWS_FLAG_NO_METADATA)) {
 			$metadata['columns'] = [];
 			
 			if ($flags & self::ROWS_FLAG_GLOBAL_TABLES_SPEC) {
-				$keyspace = parent::readString();
-				$tableName = parent::readString();
+				$keyspace = $this->_stream->readString();
+				$tableName = $this->_stream->readString();
 
 				for ($i = 0; $i < $metadata['columns_count']; ++$i) {
 					$metadata['columns'][] = [
 						'keyspace' => $keyspace,
 						'tableName' => $tableName,
-						'name' => parent::readString(),
-						'type' => self::readType()
+						'name' => $this->_stream->readString(),
+						'type' => $this->_stream->readType()
 					];
 				}
 			}
 			else {
 				for ($i = 0; $i < $metadata['columns_count']; ++$i) {
 					$metadata['columns'][] = [
-						'keyspace' => parent::readString(),
-						'tableName' => parent::readString(),
-						'name' => parent::readString(),
-						'type' => self::readType()
+						'keyspace' => $this->_stream->readString(),
+						'tableName' => $this->_stream->readString(),
+						'name' => $this->_stream->readString(),
+						'type' => $this->_stream->readType()
 					];
 				}
 			}
@@ -213,13 +162,13 @@ class Result extends Response {
 		if ($this->getKind() !== self::ROWS){
 			throw new Exception('Unexpected Response: ' . $this->getKind());
 		}
-		$this->offset = 4;
+		$this->_stream->offset(4);
 		$this->_metadata = $this->_metadata ? array_merge($this->_metadata, $this->_readMetadata()) : $this->_readMetadata();
 
 		if (!isset($this->_metadata['columns']))
 			throw new Exception('Missing Result Metadata');
 
-		$rowCount = parent::readInt();
+		$rowCount = $this->_stream->readInt();
 		$rows = new \SplFixedArray($rowCount);
 		
 		if ($rowClass === null)
@@ -247,13 +196,13 @@ class Result extends Response {
 		if ($this->getKind() !== self::ROWS){
 			throw new Exception('Unexpected Response: ' . $this->getKind());
 		}
-		$this->offset = 4;
+		$this->_stream->offset(4);
 		$this->_metadata = $this->_metadata ? array_merge($this->_metadata, $this->_readMetadata()) : $this->_readMetadata();
 
 		if (!isset($this->_metadata['columns']))
 			throw new Exception('Missing Result Metadata');
 
-		$rowCount = parent::readInt();
+		$rowCount = $this->_stream->readInt();
 	
 		$array = new \SplFixedArray($rowCount);
 	
@@ -278,13 +227,13 @@ class Result extends Response {
 		if ($this->getKind() !== self::ROWS){
 			throw new Exception('Unexpected Response: ' . $this->getKind());
 		}
-		$this->offset = 4;
+		$this->_stream->offset(4);
 		$this->_metadata = $this->_metadata ? array_merge($this->_metadata, $this->_readMetadata()) : $this->_readMetadata();
 	
 		if (!isset($this->_metadata['columns']))
 			throw new Exception('Missing Result Metadata');
 	
-		$rowCount = parent::readInt();
+		$rowCount = $this->_stream->readInt();
 	
 		$map = [];
 	
@@ -314,13 +263,13 @@ class Result extends Response {
 		if ($this->getKind() !== self::ROWS){
 			throw new Exception('Unexpected Response: ' . $this->getKind());
 		}
-		$this->offset = 4;
+		$this->_stream->offset(4);
 		$this->_metadata = $this->_metadata ? array_merge($this->_metadata, $this->_readMetadata()) : $this->_readMetadata();
 
 		if (!isset($this->_metadata['columns']))
 			throw new Exception('Missing Result Metadata');
 
-		$rowCount = parent::readInt();
+		$rowCount = $this->_stream->readInt();
 	
 		if ($rowCount === 0)
 			return null;
@@ -344,13 +293,13 @@ class Result extends Response {
 		if ($this->getKind() !== self::ROWS){
 			throw new Exception('Unexpected Response: ' . $this->getKind());
 		}
-		$this->offset = 4;
+		$this->_stream->offset(4);
 		$this->_metadata = $this->_metadata ? array_merge($this->_metadata, $this->_readMetadata()) : $this->_readMetadata();
 
 		if (!isset($this->_metadata['columns']))
 			throw new Exception('Missing Result Metadata');
 
-		$rowCount = parent::readInt();
+		$rowCount = $this->_stream->readInt();
 	
 		if ($rowCount === 0)
 			return null;

@@ -3,17 +3,41 @@ namespace Cassandra\Response;
 
 use Cassandra\Type;
 
-trait StreamReader {
+class StreamReader {
+
+	/**
+	 */
+	protected $source;
 
 	/**
 	 * @var string
 	 */
-	protected $data;
+	protected $data = '';
 	
 	/**
 	 * @var int
 	 */
 	protected $offset = 0;
+
+	protected $dataLength = 0;
+
+	protected $totalLength = 0;
+
+	public function __construct($totalLength){
+		$this->totalLength = $totalLength;
+	}
+
+	public function setSource($source){
+		$this->source = $source;
+	}
+
+	public static function createFromData($data){
+		$length = strlen($data);
+		$stream = new self($length);
+		$stream->data = $data;
+		$stream->dataLength = $length;
+		return $stream;
+	}
 
 	/**
 	 * Read data from stream.
@@ -24,9 +48,18 @@ trait StreamReader {
 	 * @return string
 	 */
 	protected function read($length) {
+		while($this->dataLength < $this->offset + $length){
+			$this->data .= $received = $this->source->readOnce($this->totalLength - $this->dataLength);
+			$this->dataLength += strlen($received);
+		}
+
 		$output = substr($this->data, $this->offset, $length);
 		$this->offset += $length;
 		return $output;
+	}
+
+	public function offset($offset){
+		$this->offset = $offset;
 	}
 	
 	public function reset(){
@@ -304,17 +337,13 @@ trait StreamReader {
 					switch($type['type']){
 						case Type\Base::COLLECTION_LIST:
 						case Type\Base::COLLECTION_SET:
-							$dataStream = new DataStream($data);
-							return $dataStream->readList($type['value']);
+							return self::createFromData($data)->readList($type['value']);
 						case Type\Base::COLLECTION_MAP:
-							$dataStream = new DataStream($data);
-							return $dataStream->readMap($type['key'], $type['value']);
+							return self::createFromData($data)->readMap($type['key'], $type['value']);
 						case Type\Base::UDT:
-							$dataStream = new DataStream($data);
-							return $dataStream->readTuple($type['typeMap']);
+							return self::createFromData($data)->readTuple($type['typeMap']);
 						case Type\Base::TUPLE:
-							$dataStream = new DataStream($data);
-							return $dataStream->readTuple($type['typeList']);
+							return self::createFromData($data)->readTuple($type['typeList']);
 						case Type\Base::CUSTOM:
 						default:
 							$length = unpack('N', substr($data, 0, 4))[1];
@@ -324,6 +353,57 @@ trait StreamReader {
 
 				trigger_error('Unknown type ' . var_export($type, true));
 				return null;
+		}
+	}
+
+	/**
+	 * @return int|array
+	 */
+	public function readType(){
+		$type = $this->readShort();
+		switch ($type) {
+			case Type\Base::CUSTOM:
+				return [
+					'type'	=> $type,
+					'name'	=> $this->readString(),
+				];
+			case Type\Base::COLLECTION_LIST:
+			case Type\Base::COLLECTION_SET:
+				return [
+					'type'	=> $type,
+					'value'	=> self::readType(),
+				];
+			case Type\Base::COLLECTION_MAP:
+				return [
+					'type'	=> $type,
+					'key'	=> self::readType(),
+					'value'	=> self::readType(),
+				];
+			case Type\Base::UDT:
+				$data = [
+					'type'		=> $type,
+					'keyspace'	=> $this->readString(),
+					'name'		=> $this->readString(),
+					'typeMap'	=> [],
+				];
+				$length = $this->readShort();
+				for($i = 0; $i < $length; ++$i){
+					$key = $this->readString();
+					$data['typeMap'][$key] = self::readType();
+				}
+				return $data;
+			case Type\Base::TUPLE:
+				$data = [
+					'type'	=> $type,
+					'typeList'	=>	[],
+				];
+				$length = $this->readShort();
+				for($i = 0; $i < $length; ++$i){
+					$data['typeList'][] = self::readType();
+				}
+				return $data;
+			default:
+				return $type;
 		}
 	}
 }

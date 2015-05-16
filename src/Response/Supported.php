@@ -3,7 +3,7 @@ namespace Cassandra\Response;
 
 class Supported extends Response {
 	public function getData(){
-		$this->offset = 0;
+		$this->_stream->offset(0);
 		/**
 		 * TODO Check it!
 		 * Indicates which startup options are supported by the server. This message
@@ -12,6 +12,6 @@ class Supported extends Response {
 		 * The body of a SUPPORTED message is a [string multimap]. This multimap gives
 		 * for each of the supported STARTUP options, the list of supported values.
 		 */
-		return $this->readStringMultimap();
+		return $this->_stream->readStringMultimap();
 	}
 }

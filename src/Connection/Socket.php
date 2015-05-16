@@ -100,6 +100,22 @@ class Socket {
 		
 		return $data;
 	}
+
+	/**
+	 * @param $length
+	 * @throws SocketException
+	 * @return string
+	 */
+	public function readOnce($length){
+		$data = socket_read($this->_socket, $length);
+		
+		if ($data === false){
+			$errorCode = socket_last_error($this->_socket);
+			throw new SocketException(socket_strerror($errorCode), $errorCode);
+		}
+		
+		return $data;
+	}
 	
 	/**
 	 * 

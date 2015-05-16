@@ -28,83 +28,83 @@ class Error extends Response {
 	 * @return array
 	 */
 	public function getData() {
-		$this->offset = 0;
+		$this->_stream->offset(0);
 		$data = [];
-		$data['code'] = $this->readInt();
+		$data['code'] = $this->_stream->readInt();
 
 		switch($data['code']){
 			case self::SERVER_ERROR:
-				$data['message'] = "Server error: " . $this->readString();
+				$data['message'] = "Server error: " . $this->_stream->readString();
 				break;
 
 			case self::PROTOCOL_ERROR:
-				$data['message'] = "Protocol error: " . $this->readString();
+				$data['message'] = "Protocol error: " . $this->_stream->readString();
 				break;
 
 			case self::BAD_CREDENTIALS:
-				$data['message'] = "Bad credentials: " . $this->readString();
+				$data['message'] = "Bad credentials: " . $this->_stream->readString();
 				break;
 
 			case self::UNAVAILABLE_EXCEPTION:
 				$data['message'] = "Unavailable exception. Error data: " . var_export([
-						'consistency' => $this->readInt(),
-						'node' => $this->readInt(),
-						'replica' => $this->readInt()
+						'consistency' => $this->_stream->readInt(),
+						'node' => $this->_stream->readInt(),
+						'replica' => $this->_stream->readInt()
 					], true);
 				break;
 
 			case self::OVERLOADED:
-				$data['message'] = "Overloaded: " . $this->readString();
+				$data['message'] = "Overloaded: " . $this->_stream->readString();
 				break;
 
 			case self::IS_BOOTSTRAPPING:
-				$data['message'] = "Is_bootstrapping: " . $this->readString();
+				$data['message'] = "Is_bootstrapping: " . $this->_stream->readString();
 				break;
 
 			case self::TRUNCATE_ERROR:
-				$data['message'] = "Truncate_error: " . $this->readString();
+				$data['message'] = "Truncate_error: " . $this->_stream->readString();
 				break;
 
 			case self::WRITE_TIMEOUT:
 				$data['message'] = "Write_timeout. Error data: " . var_export([
-						'consistency' => $this->readInt(),
-						'node' => $this->readInt(),
-						'replica' => $this->readInt(),
-						'writeType' => $this->readString()
+						'consistency' => $this->_stream->readInt(),
+						'node' => $this->_stream->readInt(),
+						'replica' => $this->_stream->readInt(),
+						'writeType' => $this->_stream->readString()
 					], true);
 				break;
 
 			case self::READ_TIMEOUT:
 				$data['message'] = "Read_timeout. Error data: " . var_export([
-						'consistency' => $this->readInt(),
-						'node' => $this->readInt(),
-						'replica' => $this->readInt(),
-						'dataPresent' => $this->readChar()
+						'consistency' => $this->_stream->readInt(),
+						'node' => $this->_stream->readInt(),
+						'replica' => $this->_stream->readInt(),
+						'dataPresent' => $this->_stream->readChar()
 					], true);
 				break;
 
 			case self::SYNTAX_ERROR:
-				$data['message'] = "Syntax_error: " . $this->readString();
+				$data['message'] = "Syntax_error: " . $this->_stream->readString();
 				break;
 
 			case self::UNAUTHORIZED:
-				$data['message'] = "Unauthorized: " . $this->readString();
+				$data['message'] = "Unauthorized: " . $this->_stream->readString();
 				break;
 
 			case self::INVALID:
-				$data['message'] = "Invalid: " . $this->readString();
+				$data['message'] = "Invalid: " . $this->_stream->readString();
 				break;
 
 			case self::CONFIG_ERROR:
-				$data['message'] = "Config_error: " . $this->readString();
+				$data['message'] = "Config_error: " . $this->_stream->readString();
 				break;
 
 			case self::ALREADY_EXIST:
-				$data['message'] = "Already_exists: " . $this->readString();
+				$data['message'] = "Already_exists: " . $this->_stream->readString();
 				break;
 
 			case self::UNPREPARED:
-				$data['message'] = "Unprepared: " . $this->readShort();
+				$data['message'] = "Unprepared: " . $this->_stream->readShort();
 				break;
 
 			default:

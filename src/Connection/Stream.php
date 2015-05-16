@@ -58,7 +58,7 @@ class Stream {
 
 	/**
 	 * @param $length
-	 * @throws SocketException
+	 * @throws StreamException
 	 * @return string
 	 */
 	public function read($length) {
@@ -81,6 +81,26 @@ class Stream {
 		while($length > 0);
 		
 		return $data;
+	}
+
+	/**
+	 * @param $length
+	 * @throws StreamException
+	 * @return string
+	 */
+	public function readOnce($length){
+		$readData = fread($this->_stream, $length);
+
+		if (feof($this->_stream))
+			throw new StreamException('Connection reset by peer');
+
+		if (stream_get_meta_data($this->_stream)['timed_out'])
+			throw new StreamException('Connection timed out');
+
+		if (strlen($readData) == 0)
+			throw new StreamException("Unknown error");
+
+		return $readData;
 	}
 
 	/**
