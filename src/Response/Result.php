@@ -66,9 +66,11 @@ class Result extends Response {
 	}
 	
 	public function getKind(){
-		if ($this->_kind === null)
-			$this->_kind = unpack('N', substr($this->data, 0, 4))[1];
-	
+		if ($this->_kind === null){
+			$this->_stream->offset(0);
+			$this->_kind = $this->_stream->readInt();
+		}
+		
 		return $this->_kind;
 	}
 
@@ -178,7 +180,7 @@ class Result extends Response {
 			$data = [];
 	
 			foreach ($this->_metadata['columns'] as $column)
-				$data[$column['name']] = $this->readBytesAndConvertToType($column['type']);
+				$data[$column['name']] = $this->_stream->readBytesAndConvertToType($column['type']);
 				
 			$rows[$i] = $rowClass === null ? $data : new $rowClass($data);
 		}
@@ -208,7 +210,7 @@ class Result extends Response {
 	
 		for($i = 0; $i < $rowCount; ++$i){
 			foreach($this->_metadata['columns'] as $j => $column){
-				$value = $this->readBytesAndConvertToType($column['type']);
+				$value = $this->_stream->readBytesAndConvertToType($column['type']);
 	
 				if ($j == $index)
 					$array[$i] = $value;
@@ -239,7 +241,7 @@ class Result extends Response {
 	
 		for($i = 0; $i < $rowCount; ++$i){
 			foreach($this->_metadata['columns'] as $j => $column){
-				$value = $this->readBytesAndConvertToType($column['type']);
+				$value = $this->_stream->readBytesAndConvertToType($column['type']);
 	
 				if ($j === 0){
 					$key = $value;
@@ -279,7 +281,7 @@ class Result extends Response {
 		
 		$data = [];
 		foreach ($this->_metadata['columns'] as $column)
-			$data[$column['name']] = $this->readBytesAndConvertToType($column['type']);
+			$data[$column['name']] = $this->_stream->readBytesAndConvertToType($column['type']);
 	
 		return $rowClass === null ? $data : new $rowClass($data);
 	}
@@ -305,7 +307,7 @@ class Result extends Response {
 			return null;
 	
 		foreach ($this->_metadata['columns'] as $column)
-			return $this->readBytesAndConvertToType($column['type']);
+			return $this->_stream->readBytesAndConvertToType($column['type']);
 	
 		return null;
 	}

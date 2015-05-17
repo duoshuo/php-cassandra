@@ -41,6 +41,6 @@ class Response implements Frame{
 	}
 	
 	public function getBody(){
-		return $this->data;
+		return $this->_stream;
 	}
 }
