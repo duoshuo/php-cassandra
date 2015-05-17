@@ -16,7 +16,7 @@ class Response implements Frame{
 	/**
 	 * 
 	 * @param array $header
-	 * @param $body
+	 * @param $stream
 	 */
 	public function __construct($header, $stream){
 		$this->_header = $header;

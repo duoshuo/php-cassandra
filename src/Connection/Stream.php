@@ -32,7 +32,7 @@ class Stream {
 
 	/**
 	 *
-	 * @throws SocketException
+	 * @throws StreamException
 	 * @return resource
 	 */
 	protected function _connect() {
@@ -106,7 +106,7 @@ class Stream {
 	/**
 	 *
 	 * @param string $binary
-	 * @throws SocketException
+	 * @throws StreamException
 	 */
 	public function write($binary){
 		do{
