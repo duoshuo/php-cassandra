@@ -15,6 +15,6 @@ class Blob extends Base{
 	}
 	
 	public function getBinary(){
-		return pack('N', strlen($this->_value)) . $this->_value;
+		return $this->_value;
 	}
 }
