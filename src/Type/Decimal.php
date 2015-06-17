@@ -3,26 +3,42 @@ namespace Cassandra\Type;
 
 class Decimal extends Base{
 
-	protected $_scaleLen;
+    /**
+     * @param string $value
+     * @throws Exception
+     */
+    public function __construct($value = null){
+        if (!is_numeric($value))
+            throw new Exception('Incoming value must be numeric string.');
 
-	/**
-	 * @param int|string $value
-	 * @param int|string $scaleLen
-	 * @throws Exception
-	 */
-	public function __construct($value, $scaleLen = 0){
-		if (!is_numeric($value) || !is_numeric($scaleLen))
-			throw new Exception('Incoming value must be of type int.');
-
-		$this->_value = (int)$value;
-		$this->_scaleLen = max((int)$scaleLen, 0);
-	}
-	
-	public function getBinary(){
-		$highMap = 0xffffffff00000000;
-		$lowMap = 0x00000000ffffffff;
-		$higher = ($this->_value & $highMap) >> 32;
-		$lower = $this->_value & $lowMap;
-		return pack('NNN', $this->_scaleLen, $higher, $lower);
-	}
+        $this->_value = $value;
+    }
+    
+    public function getBinary(){
+        if ($this->_binary === null){
+            $pos = strpos($this->_value, '.');
+            $scaleLen = $pos === false ? 0 : strlen($this->_value) - $pos - 1;
+            $higher = ($this->_value & 0xffffffff00000000) >> 32;
+            $lower = $this->_value & 0x00000000ffffffff;
+            $this->_binary = pack('NNN', $this->_scaleLen, $higher, $lower);
+        }
+        return $this->_binary;
+    }
+    
+    /**
+     * @return string
+     */
+    public function getValue(){
+        if ($this->_value === null){
+            $unpacked = unpack('N1scale/C*', $this->_binary);
+            $valueByteLen = $length - 4;
+            $value = 0;
+            for ($i = 1; $i <= $valueByteLen; ++$i)
+                $value |= $unpacked[$i] << (($valueByteLen - $i) * 8);
+            $shift = (\PHP_INT_SIZE - $valueByteLen) * 8;
+            $value = $value << $shift >> $shift;
+            $this->_value = substr($value, 0, -$unpacked['scale']) . '.' . substr($value, -$unpacked['scale']);
+        }
+        return $this->_value;
+    }
 }
