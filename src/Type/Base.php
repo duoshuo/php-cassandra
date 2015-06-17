@@ -72,9 +72,12 @@ abstract class Base{
     /**
      * 
      * @param string $binary
+     * @return self
      */
     public function setBinary($binary){
         $this->_binary = $binary;
+        
+        return $this;
     }
     
     /**
