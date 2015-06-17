@@ -18,9 +18,10 @@ class Decimal extends Base{
         if ($this->_binary === null){
             $pos = strpos($this->_value, '.');
             $scaleLen = $pos === false ? 0 : strlen($this->_value) - $pos - 1;
-            $higher = ($this->_value & 0xffffffff00000000) >> 32;
-            $lower = $this->_value & 0x00000000ffffffff;
-            $this->_binary = pack('NNN', $this->_scaleLen, $higher, $lower);
+            $value = $this->_value * pow(10, $scaleLen);
+            $higher = ($value & 0xffffffff00000000) >> 32;
+            $lower = $value & 0x00000000ffffffff;
+            $this->_binary = pack('NNN', $scaleLen, $higher, $lower);
         }
         return $this->_binary;
     }
@@ -37,7 +38,12 @@ class Decimal extends Base{
                 $value |= $unpacked[$i] << (($valueByteLen - $i) * 8);
             $shift = (\PHP_INT_SIZE - $valueByteLen) * 8;
             $value = $value << $shift >> $shift;
-            $this->_value = substr($value, 0, -$unpacked['scale']) . '.' . substr($value, -$unpacked['scale']);
+            if ($unpacked['scale'] === 0)
+                $this->_value = (string) $value;
+            elseif (strlen($value) > $unpacked['scale'])
+                $this->_value = substr($value, 0, -$unpacked['scale']) . '.' . substr($value, -$unpacked['scale']);
+            else
+                $this->_value = $value >= 0 ? sprintf("0.%0$unpacked[scale]d", $value) : sprintf("-0.%0$unpacked[scale]d", -$value);
         }
         return $this->_value;
     }

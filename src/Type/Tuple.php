@@ -11,14 +11,15 @@ class Tuple extends Base{
      * @throws Exception
      */
     public function __construct($value, $types){
-        if ($value === null)
+        $this->_types = $types;
+        
+    	if ($value === null)
             return;
         
         if (!is_array($value) || !is_array($types))
             throw new Exception('Incoming value must be of type array.');
 
         $this->_value = $value;
-        $this->_types = $types;
     }
 
     public function getBinary(){

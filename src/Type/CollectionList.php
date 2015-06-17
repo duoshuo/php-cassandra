@@ -16,11 +16,15 @@ class CollectionList extends Base{
      * @throws Exception
      */
     public function __construct($value, $valueType) {
+        $this->_valueType = $valueType;
+        
+    	if ($value === null)
+            return;
+    
         if (!is_array($value))
             throw new Exception('Incoming value must be of type array.');
         
         $this->_value = $value;
-        $this->_valueType = $valueType;
     }
     
     public function getBinary(){

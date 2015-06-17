@@ -26,6 +26,30 @@ abstract class Base{
     const UDT = 0x0030;
     const TUPLE = 0x0031;
     
+    public static $typeClassMap = [
+        self::ASCII     => 'Cassandra\Type\Ascii',
+        self::VARCHAR   => 'Cassandra\Type\Varchar',
+        self::TEXT      => 'Cassandra\Type\Text',
+        self::VARINT    => 'Cassandra\Type\Varint',
+        self::BIGINT    => 'Cassandra\Type\Bigint',
+        self::COUNTER   => 'Cassandra\Type\Counter',
+        self::TIMESTAMP => 'Cassandra\Type\Timestamp',
+        self::BLOB      => 'Cassandra\Type\Blob',
+        self::BOOLEAN   => 'Cassandra\Type\Boolean',
+        self::DECIMAL   => 'Cassandra\Type\Decimal',
+        self::DOUBLE    => 'Cassandra\Type\Double',
+        self::FLOAT     => 'Cassandra\Type\Float',
+        self::INT       => 'Cassandra\Type\Int',
+        self::UUID      => 'Cassandra\Type\Uuid',
+        self::TIMEUUID  => 'Cassandra\Type\Timeuuid',
+        self::INET      => 'Cassandra\Type\Inet',
+        self::COLLECTION_LIST => 'Cassandra\Type\CollectionList',
+        self::COLLECTION_SET  => 'Cassandra\Type\CollectionSet',
+        self::COLLECTION_MAP  => 'Cassandra\Type\CollectionMap',
+        self::UDT       => 'Cassandra\Type\UDT',
+        self::TUPLE     => 'Cassandra\Type\Tuple',
+        self::CUSTOM    => 'Cassandra\Type\Custom',
+    ];
     /**
      * 
      * @var mixed
@@ -83,68 +107,27 @@ abstract class Base{
         if ($value === null)
             return null;
         
-        switch($dataType) {
-            case self::BLOB:
-                return new Blob($value);
-            case self::TIMESTAMP:
-                return new Timestamp($value);
-            case self::COUNTER:
-                return new Counter($value);
-            case self::BIGINT:
-                return new Bigint($value);
-            case self::VARINT:
-                return new Varint($value);
-    
-            case self::BOOLEAN:
-                return new Boolean($value);
-    
-            case self::DECIMAL:
-                return new Decimal($value);
-
-            case self::DOUBLE:
-                return new Double($value);
-    
-            case self::FLOAT:
-                return new Float($value);
-    
-            case self::INET:
-                return new Inet($value);
-    
-            case self::INT:
-                return new Int($value);
-    
-            case self::ASCII:
-                return new Ascii($value);
-            case self::VARCHAR:
-                return new Varchar($value);
-            case self::TEXT:    //    deprecated in Protocol v3
-                return new Varchar($value);
-    
-            case self::TIMEUUID:
-                return new Timeuuid($value);
-            case self::UUID:
-                return new Uuid($value);
-
-            default:
-                if (is_array($dataType)){
-                    switch($dataType['type']){
-                        case self::CUSTOM:
-                            return new Custom($value, $dataType['name']);
-                        case self::COLLECTION_SET:
-                            return new CollectionSet($value, $dataType['value']);
-                        case self::COLLECTION_LIST:
-                            return new CollectionList($value, $dataType['value']);
-                        case self::COLLECTION_MAP:
-                            return new CollectionMap($value, $dataType['key'], $dataType['value']);
-                        case self::UDT:
-                            return new UDT($value, $dataType['typeMap']);
-                        case self::TUPLE:
-                            return new Tuple($value, $dataType['typeList']);
-                        default:
-                            return new Blob($value);
-                    }
-                }
-                throw new Exception('Unknown type.');
+        if (!is_array($dataType)){
+            $class = self::$typeClassMap[$dataType];
+            return new $class($value);
+        }
+        else{
+            switch($dataType['type']){
+                case self::CUSTOM:
+                    return new Custom($value, $dataType['name']);
+                case self::COLLECTION_SET:
+                    return new CollectionSet($value, $dataType['value']);
+                case self::COLLECTION_LIST:
+                    return new CollectionList($value, $dataType['value']);
+                case self::COLLECTION_MAP:
+                    return new CollectionMap($value, $dataType['key'], $dataType['value']);
+                case self::UDT:
+                    return new UDT($value, $dataType['typeMap']);
+                case self::TUPLE:
+                    return new Tuple($value, $dataType['typeList']);
+                default:
+                    throw new Exception('Unknown type.');
+            }
         }
     
         return '';

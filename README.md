@@ -25,6 +25,8 @@ Cassandra client library for PHP, which support Protocol v3 (Cassandra 2.1) and 
 
 PHP 5.4+ is required. There is no need for additional libraries.
 
+If you want to use Bigint or Timestamp type, 64-bit system is required.
+
 Append dependency into composer.json
 
 ```
@@ -220,7 +222,7 @@ All types are supported.
     new Cassandra\Type\Counter(1000);
 
 //  Decimal
-    new Cassandra\Type\Decimal(123, 4); 	// 0.0123
+    new Cassandra\Type\Decimal('0.0123');
 
 //  Double
     new Cassandra\Type\Double(2.718281828459);

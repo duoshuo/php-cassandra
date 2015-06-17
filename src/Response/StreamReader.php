@@ -274,68 +274,31 @@ class StreamReader {
         // substr() returns FALSE when OFFSET is equal to the length of data
         $data = ($length == 0) ? '' : substr($this->data, $this->offset, $length);
         $this->offset += $length;
+        if(!is_array($type)){
+            $class = Type\Base::$typeClassMap[$type];
+            $valueObject = new $class();
+            $valueObject->setBinary($data);
+            return $valueObject->getValue();
+        }
+        else{
+            $class = Type\Base::$typeClassMap[$type['type']];
+            switch($type['type']){
+                case Type\Base::COLLECTION_LIST:
+                case Type\Base::COLLECTION_SET:
+                    return (new $class(null, $type['value']))->setBinary($data)->getValue();
+                case Type\Base::COLLECTION_MAP:
+                    return (new $class(null, $type['key'], $type['value']))->setBinary($data)->getValue();
+                case Type\Base::UDT:
+                    return (new $class(null, $type['typeMap']))->setBinary($data)->getValue();
+                case Type\Base::TUPLE:
+                    return (new $class(null, $type['typeList']))->setBinary($data)->getValue();
+                case Type\Base::CUSTOM:
+                default:
+                    $length = unpack('N', substr($data, 0, 4))[1];
+                    return substr($data, 4, $length);
+            }
 
-        switch ($type) {
-            case Type\Base::ASCII:
-            case Type\Base::VARCHAR:
-            case Type\Base::TEXT:
-                return $data;
-            case Type\Base::VARINT:
-                $value = 0;
-                foreach (unpack('C*', $data) as $i => $byte)
-                    $value |= $byte << (($length - $i) * 8);
-                $shift = (\PHP_INT_SIZE - $length) * 8;
-                return $value << $shift >> $shift;
-            case Type\Base::BIGINT:
-            case Type\Base::COUNTER:
-            case Type\Base::TIMESTAMP:    //    use big int to present timestamp in milliseconds
-                $unpacked = unpack('N2', $data);
-                return $unpacked[1] << 32 | $unpacked[2];
-            case Type\Base::BLOB:
-                return $data;
-            case Type\Base::BOOLEAN:
-                return (bool) unpack('C', $data)[1];
-            case Type\Base::DECIMAL:
-                $unpacked = unpack('N1scale/C*', $data);
-                $valueByteLen = $length - 4;
-                $value = 0;
-                for ($i = 1; $i <= $valueByteLen; ++$i)
-                    $value |= $unpacked[$i] << (($valueByteLen - $i) * 8);
-                $shift = (\PHP_INT_SIZE - $valueByteLen) * 8;
-                $value = $value << $shift >> $shift;
-                return substr($value, 0, -$unpacked['scale']) . '.' . substr($value, -$unpacked['scale']);
-            case Type\Base::DOUBLE:
-                return unpack('d', strrev($data))[1];
-            case Type\Base::FLOAT:
-                return unpack('f', strrev($data))[1];
-            case Type\Base::INT:
-                return unpack('N', $data)[1] << 32 >> 32;
-            case Type\Base::UUID:
-            case Type\Base::TIMEUUID:
-                $unpacked = unpack('n8', $data);
-                return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', $unpacked[1], $unpacked[2], $unpacked[3], $unpacked[4], $unpacked[5], $unpacked[6], $unpacked[7], $unpacked[8]);
-            case Type\Base::INET:
-                return inet_ntop($data);
-            default:
-                if (is_array($type)){
-                    switch($type['type']){
-                        case Type\Base::COLLECTION_LIST:
-                        case Type\Base::COLLECTION_SET:
-                            return self::createFromData($data)->readList($type['value']);
-                        case Type\Base::COLLECTION_MAP:
-                            return self::createFromData($data)->readMap($type['key'], $type['value']);
-                        case Type\Base::UDT:
-                            return self::createFromData($data)->readTuple($type['typeMap']);
-                        case Type\Base::TUPLE:
-                            return self::createFromData($data)->readTuple($type['typeList']);
-                        case Type\Base::CUSTOM:
-                        default:
-                            $length = unpack('N', substr($data, 0, 4))[1];
-                            return substr($data, 4, $length);
-                    }
-                }
-
-                throw new Type\Exception('Unknown type ' . var_export($type, true));
+            throw new Type\Exception('Unknown type ' . var_export($type, true));
         }
     }
 
