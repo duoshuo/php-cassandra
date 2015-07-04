@@ -265,10 +265,10 @@ All types are supported.
     new Cassandra\Type\Custom('string');
 
 //  Tuple
-    new Cassandra\Type\Tuple([1, '2'], [Cassandra\Type\Base::INT, Cassandra\Type\Base::TEXT]);
+    new Cassandra\Type\Tuple([1, '2'], [Cassandra\Type\Base::INT, Cassandra\Type\Base::VARCHAR]);
 
 //  UDT
-    new Cassandra\Type\UDT(['intField' => 1, 'textField' => '2'], ['intField' => Cassandra\Type\Base::INT, 'textField' => Cassandra\Type\Base::TEXT]); 	// in the order defined by the type
+    new Cassandra\Type\UDT(['intField' => 1, 'textField' => '2'], ['intField' => Cassandra\Type\Base::INT, 'textField' => Cassandra\Type\Base::VARCHAR]); 	// in the order defined by the type
 ```
 
 ## Using nested datatypes
@@ -293,11 +293,11 @@ new Cassandra\Type\CollectionSet([
 	'type' => Cassandra\Type\Base::UDT,
 	'typeMap' => [
 		'id' => Cassandra\Type\Base::INT,
-		'name' => Cassandra\Type\Base::TEXT,
+		'name' => Cassandra\Type\Base::VARCHAR,
 		'active' => Cassandra\Type\Base::BOOLEAN,
 		'friends' => [
 			'type' => Cassandra\Type\Base::COLLECTION_LIST,
-			'value' => Cassandra\Type\Base::TEXT
+			'value' => Cassandra\Type\Base::VARCHAR
 		],
 		'drinks' => [
 			'type' => Cassandra\Type\Base::COLLECTION_LIST,
@@ -305,7 +305,7 @@ new Cassandra\Type\CollectionSet([
 				'type' => Cassandra\Type\Base::UDT,
 				'typeMap' => [
 					'qty' => Cassandra\Type\Base::INT,
-					'brand' => Cassandra\Type\Base::TEXT
+					'brand' => Cassandra\Type\Base::VARCHAR
 				]
 			]
 		]

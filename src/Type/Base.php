@@ -29,7 +29,7 @@ abstract class Base{
     public static $typeClassMap = [
         self::ASCII     => 'Cassandra\Type\Ascii',
         self::VARCHAR   => 'Cassandra\Type\Varchar',
-        self::TEXT      => 'Cassandra\Type\Text',
+        self::TEXT      => 'Cassandra\Type\Varchar',  // deprecated in Protocol v3
         self::VARINT    => 'Cassandra\Type\Varint',
         self::BIGINT    => 'Cassandra\Type\Bigint',
         self::COUNTER   => 'Cassandra\Type\Counter',
