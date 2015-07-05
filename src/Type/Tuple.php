@@ -14,7 +14,7 @@ class Tuple extends Base{
         if ($value === null)
             return;
         
-        if (!is_array($value) || !is_array($types))
+        if (!is_array($value))
             throw new Exception('Incoming value must be type of array.');
 
         $this->_value = $value;
@@ -29,7 +29,7 @@ class Tuple extends Base{
             else {
                 $valueBinary = $value[$key] instanceof Base
                     ? $value[$key]->getBinary()
-                    : Base::binaryByType($type, $value[$key]);
+                    : Base::getBinaryByType($type, $value[$key]);
                 
                 $binary .= pack('N', strlen($valueBinary)) . $valueBinary;
             }

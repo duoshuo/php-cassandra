@@ -24,8 +24,8 @@ class CollectionList extends Base{
     public static function binary($value, array $definition){
         $binary = pack('N', count($value));
         list($valueType) = $definition;
-        foreach($this->_value as $val) {
-            $itemPacked = Base::binaryByType($valueType, $val);
+        foreach($value as $val) {
+            $itemPacked = Base::getBinaryByType($valueType, $val);
             $binary .= pack('N', strlen($itemPacked)) . $itemPacked;
         }
         return $binary;

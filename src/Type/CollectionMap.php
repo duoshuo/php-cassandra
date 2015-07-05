@@ -31,11 +31,11 @@ class CollectionMap extends Base{
         foreach($value as $key => $val) {
             $keyPacked = $key instanceof Base
                 ? $key->getBinary()
-                : Base::binaryByType($keyType, $key);
+                : Base::getBinaryByType($keyType, $key);
             
             $valuePacked = $val instanceof Base
                 ? $val->getBinary()
-                : Base::binaryByType($valueType, $val);
+                : Base::getBinaryByType($valueType, $val);
             
             $binary .= pack('N', strlen($keyPacked)) . $keyPacked;
             $binary .= pack('N', strlen($valuePacked)) . $valuePacked;
