@@ -17,23 +17,17 @@ class Bigint extends Base{
         $this->_value = (int) $value;
     }
     
-    public function getBinary(){
-        if ($this->_binary === null){
-            $higher = ($this->_value & 0xffffffff00000000) >>32;
-            $lower = $this->_value & 0x00000000ffffffff;
-            $this->_binary = pack('NN', $higher, $lower);
-        }
-        return $this->_binary;
+    public static function binary($value){
+        $higher = ($value & 0xffffffff00000000) >>32;
+        $lower = $value & 0x00000000ffffffff;
+        return pack('NN', $higher, $lower);
     }
     
     /**
      * @return int
      */
-    public function getValue(){
-        if ($this->_value === null){
-            $unpacked = unpack('N2', $this->_binary);
-            $this->_value = $unpacked[1] << 32 | $unpacked[2];
-        }
-        return $this->_value;
+    public static function parse($binary){
+        $unpacked = unpack('N2', $binary);
+        return $unpacked[1] << 32 | $unpacked[2];
     }
 }

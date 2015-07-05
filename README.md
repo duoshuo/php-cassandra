@@ -237,13 +237,13 @@ All types are supported.
     new Cassandra\Type\Int(1);
 
 //  CollectionList
-    new Cassandra\Type\CollectionList([1, 1, 1], Cassandra\Type\Base::INT);
+    new Cassandra\Type\CollectionList([1, 1, 1], [Cassandra\Type\Base::INT]);
 
 //  CollectionMap
-    new Cassandra\Type\CollectionMap(['a' => 1, 'b' => 2], Cassandra\Type\Base::ASCII, Cassandra\Type\Base::INT);
+    new Cassandra\Type\CollectionMap(['a' => 1, 'b' => 2], [Cassandra\Type\Base::ASCII, Cassandra\Type\Base::INT]);
 
 //  CollectionSet
-    new Cassandra\Type\CollectionSet([1, 2, 3], Cassandra\Type\Base::INT);
+    new Cassandra\Type\CollectionSet([1, 2, 3], [Cassandra\Type\Base::INT]);
 
 //  Timestamp (unit: millisecond)
     new Cassandra\Type\Timestamp((int) (microtime(true) * 1000));
@@ -262,7 +262,7 @@ All types are supported.
     new Cassandra\Type\Varint(10000000000);
 
 //  Custom
-    new Cassandra\Type\Custom('string');
+    new Cassandra\Type\Custom('string', 'var_name');
 
 //  Tuple
     new Cassandra\Type\Tuple([1, '2'], [Cassandra\Type\Base::INT, Cassandra\Type\Base::VARCHAR]);
@@ -290,8 +290,9 @@ new Cassandra\Type\CollectionSet([
 		'drinks' => []
 	]
 ], [
+	[
 	'type' => Cassandra\Type\Base::UDT,
-	'typeMap' => [
+	'definition' => [
 		'id' => Cassandra\Type\Base::INT,
 		'name' => Cassandra\Type\Base::VARCHAR,
 		'active' => Cassandra\Type\Base::BOOLEAN,
@@ -310,6 +311,7 @@ new Cassandra\Type\CollectionSet([
 			]
 		]
 	]
+]
 ]);
 ```
 

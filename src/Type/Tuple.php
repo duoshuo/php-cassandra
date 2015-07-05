@@ -3,50 +3,48 @@ namespace Cassandra\Type;
 
 class Tuple extends Base{
 
-    protected $_types;
-
     /**
      * @param array $value
-     * @param array $types
+     * @param array $definition
      * @throws Exception
      */
-    public function __construct($value, $types){
-        $this->_types = $types;
+    public function __construct($value, array $definition){
+        $this->_definition = $definition;
         
-    	if ($value === null)
+        if ($value === null)
             return;
         
         if (!is_array($value) || !is_array($types))
-            throw new Exception('Incoming value must be of type array.');
+            throw new Exception('Incoming value must be type of array.');
 
         $this->_value = $value;
     }
 
-    public function getBinary(){
-        if ($this->_binary === null){
-            $this->_binary = '';
-            foreach ($this->_types as $key => $type) {
-                $typeObject = $this->_value[$key] instanceof Base
-                    ? $this->_value[$key]
-                    : Base::getTypeObject($type, $this->_value[$key]);
-    
-                if ($typeObject === null) {
-                    $this->_binary .= "\xff\xff\xff\xff";
-                }
-                else {
-                    $binary = $typeObject->getBinary();
-                    $this->_binary .= pack('N', strlen($binary)) . $binary;
-                }
+    public static function binary($value, array $definition){
+        $binary = '';
+        foreach ($definition as $key => $type) {
+            if ($value[$key] === null) {
+                $binary .= "\xff\xff\xff\xff";
+            }
+            else {
+                $valueBinary = $value[$key] instanceof Base
+                    ? $value[$key]->getBinary()
+                    : Base::binaryByType($type, $value[$key]);
+                
+                $binary .= pack('N', strlen($valueBinary)) . $valueBinary;
             }
         }
-
-        return $this->_binary;
+        
+        return $binary;
     }
     
-    public function getValue(){
-        if ($this->_value === null){
-            $this->_value = \Cassandra\Response\StreamReader::createFromData($this->_binary)->readTuple($this->_types);
-        }
-        return $this->_value;
+    /**
+     * 
+     * @param string $binary
+     * @param array $definition
+     * @return array
+     */
+    public static function parse($binary, array $definition){
+        return \Cassandra\Response\StreamReader::createFromData($binary)->readTuple($definition);
     }
 }

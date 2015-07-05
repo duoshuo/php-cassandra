@@ -1,35 +1,31 @@
 <?php
 namespace Cassandra\Type;
 
-class Custom extends Blob{
-    /**
-     * 
-     * @var string
-     */
-    protected $_name;
+class Custom extends Base{
     
     /**
      * 
      * @param string $value
-     * @param string $name
+     * @param array $definition
      * @throws Exception
      */
-    public function __construct($value, $name){
+    public function __construct($value, array $definition){
         if ($value === null)
             return;
+        $this->_definition = $definition;
         
         if (!is_string($value))
-            throw new Exception('Incoming value must be of type string.');
+            throw new Exception('Incoming value must be type of string.');
     
-        $this->_binary = $this->_value = $value;
-        $this->_name = $name;
+        $this->_value = $value;
     }
     
-    public function getBinary(){
-        return $this->_binary;
+    public static function binary($value, array $definition){
+        return pack('n', strlen($value)) . $value;
     }
     
-    public function getValue(){
-        return $this->_value;
+    public static function parse($binary, array $definition){
+        $length = unpack('n', substr($binary, 0, 2))[1];
+        return substr($binary, 2, $length);
     }
 }

@@ -12,24 +12,19 @@ class Boolean extends Base{
             return;
         
         if (!is_bool($value))
-            throw new Exception('Incoming value must be of type boolean.');
+            throw new Exception('Incoming value must be type of boolean.');
 
         $this->_value = $value;
     }
     
-    public function getBinary(){
-        if ($this->_binary === null)
-            $this->_binary = $this->_value ? "\1" : "\0";
-        return $this->_binary;
+    public static function binary($value){
+        return $value ? "\1" : "\0";
     }
     
     /**
      * @return bool
      */
-    public function getValue(){
-        if ($this->_value === null){
-            $this->_value = $this->_binary !== "\0";
-        }
-        return $this->_value;
+    public static function parse($binary){
+        return $binary !== "\0";
     }
 }

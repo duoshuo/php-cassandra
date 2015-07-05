@@ -5,43 +5,33 @@ class CollectionList extends Base{
     
     /**
      * 
-     * @var int|array
-     */
-    protected $_valueType;
-    
-    /**
-     * 
      * @param array $value
-     * @param int|array $valueType
+     * @param array $definition
      * @throws Exception
      */
-    public function __construct($value, $valueType) {
-        $this->_valueType = $valueType;
+    public function __construct($value, array $definition) {
+        $this->_definition = $definition;
         
-    	if ($value === null)
+        if ($value === null)
             return;
     
         if (!is_array($value))
-            throw new Exception('Incoming value must be of type array.');
+            throw new Exception('Incoming value must be type of array.');
         
         $this->_value = $value;
     }
     
-    public function getBinary(){
-        if ($this->_binary === null){
-            $this->_binary = pack('N', count($this->_value));
-            foreach($this->_value as $value) {
-                $itemPacked = Base::getTypeObject($this->_valueType, $value)->getBinary();
-                $this->_binary .= pack('N', strlen($itemPacked)) . $itemPacked;
-            }
+    public static function binary($value, array $definition){
+        $binary = pack('N', count($value));
+        list($valueType) = $definition;
+        foreach($this->_value as $val) {
+            $itemPacked = Base::binaryByType($valueType, $val);
+            $binary .= pack('N', strlen($itemPacked)) . $itemPacked;
         }
-        return $this->_binary;
+        return $binary;
     }
     
-    public function getValue(){
-        if ($this->_value === null){
-            $this->_value = \Cassandra\Response\StreamReader::createFromData($this->_binary)->readList($this->_valueType);
-        }
-        return $this->_value;
+    public static function parse($binary, array $definition){
+        return \Cassandra\Response\StreamReader::createFromData($binary)->readList($definition);
     }
 }

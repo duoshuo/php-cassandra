@@ -17,19 +17,15 @@ class Double extends Base{
         $this->_value = $value;
     }
     
-    public function getBinary(){
-        if ($this->_binary === null)
-            $this->_binary = strrev(pack('d', $this->_value));
-        return $this->_binary;
+    public static function binary($value){
+        return strrev(pack('d', $value));
     }
     
     /**
+     * @param string $binary
      * @return int
      */
-    public function getValue(){
-        if ($this->_value === null){
-            $this->_value = unpack('d', strrev($this->_binary))[1];
-        }
-        return $this->_value;
+    public static function parse($binary){
+        return unpack('d', strrev($binary))[1];
     }
 }

@@ -16,16 +16,11 @@ class Float extends Base{
         $this->_value = $value;
     }
     
-    public function getBinary(){
-        if ($this->_binary === null)
-            $this->_binary = strrev(pack('f', $this->_value));
-        return $this->_binary;
+    public static function binary($value){
+        return strrev(pack('f', $value));
     }
     
-    public function getValue(){
-        if ($this->_value === null){
-            $this->_value = unpack('f', strrev($this->_binary))[1];
-        }
-        return $this->_value;
+    public static function parse($binary){
+        return unpack('f', strrev($binary))[1];
     }
 }

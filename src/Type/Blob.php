@@ -12,16 +12,16 @@ class Blob extends Base{
             return;
         
         if (!is_string($value))
-            throw new Exception('Incoming value must be of type string.');
+            throw new Exception('Incoming value must be type of string.');
         
         $this->_binary = $this->_value = $value;
     }
     
-    public function getBinary(){
-        return $this->_binary;
+    public static function binary($value){
+        return $value;
     }
     
-    public function getValue(){
-        return $this->_value;
+    public static function parse($binary){
+        return $binary;
     }
 }

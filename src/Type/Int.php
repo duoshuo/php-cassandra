@@ -12,24 +12,21 @@ class Int extends Base{
             return;
         
         if (!is_numeric($value))
-            throw new Exception('Incoming value must be of type int.');
+            throw new Exception('Incoming value must be type of int.');
     
         $this->_value = (int) $value;
     }
     
-    public function getBinary(){
-        if ($this->_binary === null)
-            $this->_binary = pack('N', $this->_value);
-        return $this->_binary;
+    public static function binary($value){
+        return pack('N', $value);
     }
     
     /**
+     * @param string $binary
      * @return int
      */
-    public function getValue(){
-        if ($this->_value === null){
-            $this->_value = unpack('N', $this->_binary)[1] << 32 >> 32;
-        }
-        return $this->_value;
+    public static function parse($binary){
+        $bits = PHP_INT_SIZE * 8 - 32;
+        return unpack('N', $binary)[1] << $bits >> $bits;
     }
 }

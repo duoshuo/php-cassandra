@@ -141,14 +141,15 @@ class StreamReader {
     /**
      * Read list.
      *
-     * @param $valueType
+     * @param array $definition [$valueType]
      * @return array
      */
-    public function readList($valueType) {
+    public function readList(array $definition) {
+        list($valueType) = $definition;
         $list = [];
         $count = $this->readInt();
         for ($i = 0; $i < $count; ++$i) {
-            $list[] = $this->readBytesAndConvertToType($valueType);
+            $list[] = $this->readValue($valueType);
         }
         return $list;
     }
@@ -156,25 +157,30 @@ class StreamReader {
     /**
      * Read map.
      *
-     * @param $keyType
-     * @param $valueType
+     * @param array $definition [$keyType, $valueType]
      * @return array
      */
-    public function readMap($keyType, $valueType) {
+    public function readMap(array $definition) {
+        list($keyType, $valueType) = $definition;
         $map = [];
         $count = $this->readInt();
         for ($i = 0; $i < $count; ++$i) {
-            $map[$this->readBytesAndConvertToType($keyType)] = $this->readBytesAndConvertToType($valueType);
+            $map[$this->readValue($keyType)] = $this->readValue($valueType);
         }
         return $map;
     }
 
-    public function readTuple($types) {
+    /**
+     * 
+     * @param array $definition ['key1'=>$valueType1, 'key2'=>$valueType2, ...]
+     * @return array
+     */
+    public function readTuple(array $definition) {
         $tuple = [];
         $dataLength = strlen($this->data);
-        foreach ($types as $key => $type) {
+        foreach ($definition as $key => $type) {
             if ($this->offset < $dataLength)
-                $tuple[$key] = $this->readBytesAndConvertToType($type);
+                $tuple[$key] = $this->readValue($type);
             else
                 $tuple[$key] = null;
         }
@@ -256,12 +262,23 @@ class StreamReader {
     }
 
     /**
+     * alias of readValue()
+     * @deprecated
+     * 
+     * @param int|array $type
+     * @return mixed
+     */
+    public function readBytesAndConvertToType($type){
+        return $this->readValue($type);
+    }
+    
+    /**
      * read a [bytes] and read by type
      *
      * @param int|array $type
      * @return mixed
      */
-    public function readBytesAndConvertToType($type){
+    public function readValue($type){
         $binaryLength = substr($this->data, $this->offset, 4);
         $this->offset += 4;
 
@@ -276,29 +293,13 @@ class StreamReader {
         $this->offset += $length;
         if(!is_array($type)){
             $class = Type\Base::$typeClassMap[$type];
-            $valueObject = new $class();
-            $valueObject->setBinary($data);
-            return $valueObject->getValue();
+            return $class::parse($data);
         }
         else{
+            if (!isset(Type\Base::$typeClassMap[$type['type']]))
+                throw new Type\Exception('Unknown type ' . var_export($type, true));
             $class = Type\Base::$typeClassMap[$type['type']];
-            switch($type['type']){
-                case Type\Base::COLLECTION_LIST:
-                case Type\Base::COLLECTION_SET:
-                    return (new $class(null, $type['value']))->setBinary($data)->getValue();
-                case Type\Base::COLLECTION_MAP:
-                    return (new $class(null, $type['key'], $type['value']))->setBinary($data)->getValue();
-                case Type\Base::UDT:
-                    return (new $class(null, $type['typeMap']))->setBinary($data)->getValue();
-                case Type\Base::TUPLE:
-                    return (new $class(null, $type['typeList']))->setBinary($data)->getValue();
-                case Type\Base::CUSTOM:
-                default:
-                    $length = unpack('N', substr($data, 0, 4))[1];
-                    return substr($data, 4, $length);
-            }
-
-            throw new Type\Exception('Unknown type ' . var_export($type, true));
+            return $class::parse($data, $type['definition']);
         }
     }
 
@@ -311,41 +312,40 @@ class StreamReader {
             case Type\Base::CUSTOM:
                 return [
                     'type'    => $type,
-                    'name'    => $this->readString(),
+                    'definition'=> [$this->readString()],
                 ];
             case Type\Base::COLLECTION_LIST:
             case Type\Base::COLLECTION_SET:
                 return [
                     'type'    => $type,
-                    'value'    => self::readType(),
+                    'definition'    => [$this->readType()],
                 ];
             case Type\Base::COLLECTION_MAP:
                 return [
                     'type'    => $type,
-                    'key'    => self::readType(),
-                    'value'    => self::readType(),
+                    'definition'=> [$this->readType(), $this->readType()],
                 ];
             case Type\Base::UDT:
                 $data = [
                     'type'        => $type,
                     'keyspace'    => $this->readString(),
                     'name'        => $this->readString(),
-                    'typeMap'    => [],
+                    'definition'    => [],
                 ];
                 $length = $this->readShort();
                 for($i = 0; $i < $length; ++$i){
                     $key = $this->readString();
-                    $data['typeMap'][$key] = self::readType();
+                    $data['definition'][$key] = $this->readType();
                 }
                 return $data;
             case Type\Base::TUPLE:
                 $data = [
                     'type'    => $type,
-                    'typeList'    =>    [],
+                    'definition'    =>    [],
                 ];
                 $length = $this->readShort();
                 for($i = 0; $i < $length; ++$i){
-                    $data['typeList'][] = self::readType();
+                    $data['definition'][] = $this->readType();
                 }
                 return $data;
             default:

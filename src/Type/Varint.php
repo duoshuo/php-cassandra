@@ -16,28 +16,21 @@ class Varint extends Bigint{
         $this->_value = (int) $value;
     }
     
-    public function getBinary(){
-        if ($this->_binary === null){
-            $higher = ($this->_value & 0xffffffff00000000) >>32;
-            $lower = $this->_value & 0x00000000ffffffff;
-            $this->_binary = pack('NN', $higher, $lower);
-        }
-        return $this->_binary;
+    public static function binary($value){
+        $higher = ($value & 0xffffffff00000000) >>32;
+        $lower = $value & 0x00000000ffffffff;
+        return pack('NN', $higher, $lower);
     }
     
     /**
      * @return int
      */
-    public function getValue(){
-        if ($this->_value === null){
-            $value = 0;
-            $length = strlen($this->_binary);
-            foreach (unpack('C*', $this->_binary) as $i => $byte)
-                $value |= $byte << (($length - $i) * 8);
-            $shift = (\PHP_INT_SIZE - $length) * 8;
-            $this->_value = $value << $shift >> $shift;
-        }
-        
-        return $this->_value;
+    public static function parse($binary){
+        $value = 0;
+        $length = strlen($binary);
+        foreach (unpack('C*', $binary) as $i => $byte)
+            $value |= $byte << (($length - $i) * 8);
+        $shift = (\PHP_INT_SIZE - $length) * 8;
+        return $value << $shift >> $shift;
     }
 }

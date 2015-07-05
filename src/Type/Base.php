@@ -50,6 +50,13 @@ abstract class Base{
         self::TUPLE     => 'Cassandra\Type\Tuple',
         self::CUSTOM    => 'Cassandra\Type\Custom',
     ];
+
+    /**
+     * 
+     * @var array
+     */
+    protected $_definition;
+
     /**
      * 
      * @var mixed
@@ -83,12 +90,20 @@ abstract class Base{
     /**
      * @return string
      */
-    abstract public function getBinary();
+    public function getBinary(){
+        if ($this->_binary === null)
+            $this->_binary = static::binary($this->_value, $this->_definition);
+        
+        return $this->_binary;
+    }
     
     /**
      * @return mixed
      */
     public function getValue(){
+        if ($this->_value)
+            $this->_value = static::parse($this->_binary, $this->_definition);
+        
         return $this->_value;
     }
     
@@ -97,6 +112,19 @@ abstract class Base{
      */
     public function __toString(){
         return (string) $this->_value;
+    }
+    
+    public static function getBinaryByType($dataType, $value){
+        if (is_array($dataType)){
+            if (!isset($dataType['definition']))
+                throw new Exception('Since v0.7, collection types should have "definition" directive.');
+            $class = self::$typeClassMap[$dataType['type']];
+            return $class::binary($value, $dataType['definition']);
+        }
+        else{
+            $class = self::$typeClassMap[$dataType];
+            return $class::binary($value);
+        }
     }
     
     /**
@@ -115,24 +143,8 @@ abstract class Base{
             return new $class($value);
         }
         else{
-            switch($dataType['type']){
-                case self::CUSTOM:
-                    return new Custom($value, $dataType['name']);
-                case self::COLLECTION_SET:
-                    return new CollectionSet($value, $dataType['value']);
-                case self::COLLECTION_LIST:
-                    return new CollectionList($value, $dataType['value']);
-                case self::COLLECTION_MAP:
-                    return new CollectionMap($value, $dataType['key'], $dataType['value']);
-                case self::UDT:
-                    return new UDT($value, $dataType['typeMap']);
-                case self::TUPLE:
-                    return new Tuple($value, $dataType['typeList']);
-                default:
-                    throw new Exception('Unknown type.');
-            }
+            $class = self::$typeClassMap[$dataType['type']];
+            return new $class($value, $dataType['definition']);
         }
-    
-        return '';
     }
 }

@@ -14,11 +14,11 @@ class Varchar extends Base{
         $this->_binary = $this->_value = $value;
     }
     
-    public function getBinary(){
-        return $this->_binary;
+    public static function binary($value){
+        return $value;
     }
     
-    public function getValue(){
-        return $this->_value;
+    public static function parse($binary){
+        return $binary;
     }
 }

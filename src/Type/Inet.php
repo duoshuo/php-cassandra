@@ -12,21 +12,16 @@ class Inet extends Base{
             return;
         
         if (!is_string($value))
-            throw new Exception('Incoming value must be of type string.');
+            throw new Exception('Incoming value must be type of string.');
         
         $this->_value = $value;
     }
     
-    public function getBinary(){
-        if ($this->_binary === null)
-            $this->_binary = inet_pton($this->_value);
-        return $this->_binary;
+    public static function binary($value){
+        return inet_pton($value);
     }
     
-    public function getValue(){
-        if ($this->_value === null){
-            $this->_value = inet_ntop($this->_binary);
-        }
-        return $this->_value;
+    public static function parse($binary){
+        return inet_ntop($binary);
     }
 }
