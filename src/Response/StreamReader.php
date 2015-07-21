@@ -6,37 +6,17 @@ use Cassandra\Type;
 class StreamReader {
 
     /**
-     */
-    protected $source;
-
-    /**
      * @var string
      */
-    protected $data = '';
+    protected $data;
     
     /**
      * @var int
      */
     protected $offset = 0;
 
-    protected $dataLength = 0;
-
-    protected $totalLength = 0;
-
-    public function __construct($totalLength){
-        $this->totalLength = $totalLength;
-    }
-
-    public function setSource($source){
-        $this->source = $source;
-    }
-
-    public static function createFromData($data){
-        $length = strlen($data);
-        $stream = new self($length);
-        $stream->data = $data;
-        $stream->dataLength = $length;
-        return $stream;
+    public function __construct($data){
+        $this->data = $data;
     }
 
     /**
@@ -48,11 +28,6 @@ class StreamReader {
      * @return string
      */
     protected function read($length) {
-        while($this->dataLength < $this->offset + $length){
-            $this->data .= $received = $this->source->readOnce($this->totalLength - $this->dataLength);
-            $this->dataLength += strlen($received);
-        }
-
         $output = substr($this->data, $this->offset, $length);
         $this->offset += $length;
         return $output;

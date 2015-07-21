@@ -44,6 +44,6 @@ class CollectionMap extends Base{
     }
     
     public static function parse($binary, array $definition){
-        return \Cassandra\Response\StreamReader::createFromData($binary)->readMap($definition);
+        return (new \Cassandra\Response\StreamReader($binary))->readMap($definition);
     }
 }

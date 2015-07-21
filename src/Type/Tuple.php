@@ -45,6 +45,6 @@ class Tuple extends Base{
      * @return array
      */
     public static function parse($binary, array $definition){
-        return \Cassandra\Response\StreamReader::createFromData($binary)->readTuple($definition);
+        return (new \Cassandra\Response\StreamReader($binary))->readTuple($definition);
     }
 }

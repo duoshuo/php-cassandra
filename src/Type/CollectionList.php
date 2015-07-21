@@ -32,6 +32,6 @@ class CollectionList extends Base{
     }
     
     public static function parse($binary, array $definition){
-        return \Cassandra\Response\StreamReader::createFromData($binary)->readList($definition);
+        return (new \Cassandra\Response\StreamReader($binary))->readList($definition);
     }
 }
