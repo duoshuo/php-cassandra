@@ -47,8 +47,9 @@ class Error extends Response {
 
 			case self::UNAVAILABLE_EXCEPTION:
 				$data['message'] = "Unavailable exception. Error data: " . var_export([
-						'consistency' => $this->_stream->readInt(),
-						'node' => $this->_stream->readInt(),
+                        'error'=>$this->_stream->readString(),
+                        'consistency' => $this->_stream->readShort(),
+                        'node' => $this->_stream->readInt(),
 						'replica' => $this->_stream->readInt()
 					], true);
 				break;
@@ -67,7 +68,8 @@ class Error extends Response {
 
 			case self::WRITE_TIMEOUT:
 				$data['message'] = "Write_timeout. Error data: " . var_export([
-						'consistency' => $this->_stream->readInt(),
+                        'error'=>$this->_stream->readString(),
+                        'consistency' => $this->_stream->readShort(),
 						'node' => $this->_stream->readInt(),
 						'replica' => $this->_stream->readInt(),
 						'writeType' => $this->_stream->readString()
@@ -76,7 +78,8 @@ class Error extends Response {
 
 			case self::READ_TIMEOUT:
 				$data['message'] = "Read_timeout. Error data: " . var_export([
-						'consistency' => $this->_stream->readInt(),
+                        'error'=>$this->_stream->readString(),
+                        'consistency' => $this->_stream->readShort(),
 						'node' => $this->_stream->readInt(),
 						'replica' => $this->_stream->readInt(),
 						'dataPresent' => $this->_stream->readChar()

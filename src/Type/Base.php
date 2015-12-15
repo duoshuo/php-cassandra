@@ -101,7 +101,7 @@ abstract class Base{
      * @return mixed
      */
     public function getValue(){
-        if ($this->_value)
+        if ($this->_value === null && $this->_binary !== null)
             $this->_value = static::parse($this->_binary, $this->_definition);
         
         return $this->_value;
