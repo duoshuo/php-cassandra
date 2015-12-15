@@ -1,7 +1,7 @@
 <?php
 namespace Cassandra\Type;
 
-class Float extends Base{
+class PhpFloat extends Base{
     /**
      * @param double $value
      * @throws Exception

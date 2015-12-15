@@ -1,7 +1,7 @@
 <?php
 namespace Cassandra\Type;
 
-class Int extends Base{
+class PhpInt extends Base{
 
     /**
      * @param int|string $value
