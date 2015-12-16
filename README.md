@@ -228,13 +228,13 @@ All types are supported.
     new Cassandra\Type\Double(2.718281828459);
 
 //  Float
-    new Cassandra\Type\Float(2.718);
+    new Cassandra\Type\PhpFloat(2.718);
 
 //  Inet
     new Cassandra\Type\Inet('127.0.0.1');
 
 //  Int
-    new Cassandra\Type\Int(1);
+    new Cassandra\Type\PhpInt(1);
 
 //  CollectionList
     new Cassandra\Type\CollectionList([1, 1, 1], [Cassandra\Type\Base::INT]);
