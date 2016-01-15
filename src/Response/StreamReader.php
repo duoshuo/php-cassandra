@@ -40,6 +40,15 @@ class StreamReader {
     public function reset(){
         $this->offset = 0;
     }
+    
+    /**
+     * Get the current position of this stream
+     * 
+     * @return int
+     */
+    public function pos() {
+        return $this->offset;
+    }
 
     /**
      * Read single character.
