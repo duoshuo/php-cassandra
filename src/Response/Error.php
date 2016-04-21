@@ -123,6 +123,6 @@ class Error extends Response {
 	 */
 	public function getException(){
 		$data = $this->getData();
-		return new Exception($data['message'], $data['code']);
+		return new \Exception($data['message'], $data['code']);
 	}
 }
