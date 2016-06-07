@@ -22,7 +22,10 @@ class Uuid extends Base{
     }
     
     public static function parse($binary){
-        $unpacked = unpack('n8', $binary);
-        return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', $unpacked[1], $unpacked[2], $unpacked[3], $unpacked[4], $unpacked[5], $unpacked[6], $unpacked[7], $unpacked[8]);
+        if($binary) {
+            $unpacked = unpack('n8', $binary);
+            return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', $unpacked[1], $unpacked[2], $unpacked[3], $unpacked[4], $unpacked[5], $unpacked[6], $unpacked[7], $unpacked[8]);
+        }
+        return "";
     }
 }
