@@ -94,7 +94,7 @@ class Batch extends Request{
      * @param array $options
      * @return string
      */
-    public static function queryParameters($consistency, array $options = []){
+    public static function queryParameters($consistency, array $options = [], array $values = []){
         $flags = 0;
         $optional = '';
     
