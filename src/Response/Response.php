@@ -9,7 +9,7 @@ class Response implements Frame{
 	protected $_header;
 
 	/**
-	 * @var
+	 * @var StreamReader
 	 */
 	protected $_stream;
 	

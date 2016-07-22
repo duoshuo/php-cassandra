@@ -69,12 +69,13 @@ $nodes = [
 		'timeout'	=> 30, // write/recv timeout, default 30, stream transport only
 		'persistent'	=> true, // use persistent PHP connection, default false,  stream transport only  
 	],
-	[				// advanced way, using SSL
+	[				// advanced way, using SSL(TLS)
 		'class'		=> 'Cassandra\Connection\Stream', // "class" must be defined as "Cassandra\Connection\Stream" for ssl or tls
 		'host'		=> 'ssl://10.205.48.70',// or 'tls://10.205.48.70'
 		'port'		=> 9042,
 		'username'	=> 'admin',
 		'password'	=> 'pass',
+		'ssl'		=> ['verify_peer'=>false,'verify_peer_name'=>false], //disable certificate verification in PHP 5.6 (http://php.net/manual/en/migration56.openssl.php)
 	],
 ];
 
@@ -123,6 +124,17 @@ $row = $response->fetchRow();		// ArrayObject
 
 // Return the first column of the first row of the result set.
 $value = $response->fetchOne();		// mixed
+```
+
+## Iterate over result
+```php
+// Print all roles
+$response = $connection->querySync("SELECT role FROM system_auth.roles");
+
+foreach($response AS $rowNo => $rowContent)
+{
+	echo $rowContent['role']."\n";
+}
 ```
 
 ## Query Asynchronously

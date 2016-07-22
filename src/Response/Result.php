@@ -3,7 +3,7 @@ namespace Cassandra\Response;
 use Cassandra\Protocol\Frame;
 use Cassandra\Type;
 
-class Result extends Response {
+class Result extends Response implements \IteratorAggregate {
     const VOID = 0x0001;
     const ROWS = 0x0002;
     const SET_KEYSPACE = 0x0003;
@@ -311,4 +311,12 @@ class Result extends Response {
     
         return null;
     }
+    
+    /**
+     * @return
+     */
+    public function getIterator() {
+       return new ResultIterator($this->_stream, $this->getMetadata(), $this->_rowClass);
+    }
+
 }
