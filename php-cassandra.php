@@ -56,6 +56,7 @@ require 'src/Response/Exception.php';
 require 'src/Response/Ready.php';
 require 'src/Response/Result.php';
 require 'src/Response/Supported.php';
+require 'src/Response/ResultIterator.php';
 
 require 'src/Connection.php';
 require 'src/Statement.php';
