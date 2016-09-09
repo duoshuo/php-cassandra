@@ -125,6 +125,17 @@ $row = $response->fetchRow();		// ArrayObject
 $value = $response->fetchOne();		// mixed
 ```
 
+## Iterate over result
+```php
+// Print all roles
+$response = $connection->querySync("SELECT role FROM system_auth.roles");
+
+foreach($response AS $rowNo => $rowContent)
+{
+	echo $rowContent['role']."\n";
+}
+```
+
 ## Query Asynchronously
 
 ```php
