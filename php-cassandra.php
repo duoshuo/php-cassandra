@@ -48,6 +48,7 @@ require 'src/Request/Startup.php';
 
 require 'src/Response/StreamReader.php';
 require 'src/Response/Response.php';
+require 'src/Response/ResultIterator.php';
 require 'src/Response/Authenticate.php';
 require 'src/Response/AuthSuccess.php';
 require 'src/Response/Error.php';
