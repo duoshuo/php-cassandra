@@ -38,9 +38,14 @@ class Stream {
 	protected function _connect() {
 		if (!empty($this->_stream)) return $this->_stream;
 
-		$this->_stream = $this->_options['persistent']
-			? pfsockopen($this->_options['host'], $this->_options['port'], $errorCode, $errorMessage, $this->_options['connectTimeout'])
-			: fsockopen($this->_options['host'], $this->_options['port'], $errorCode, $errorMessage, $this->_options['connectTimeout']);
+		$context = stream_context_create();
+		if (isset($this->_options['ssl'])){
+			foreach($this->_options['ssl'] as $optname => $optval)
+				stream_context_set_option($context, 'ssl', $optname, $optval);
+		}
+
+		$connFlag = $this->_options['persistent'] ? STREAM_CLIENT_PERSISTENT : STREAM_CLIENT_CONNECT ;
+ 		$this->_stream = stream_socket_client($this->_options['host'].':'. $this->_options['port'], $errorCode, $errorMessage, $this->_options['connectTimeout'], $connFlag, $context);
 
 		if ($this->_stream === false){
 			throw new StreamException($errorMessage, $errorCode);
