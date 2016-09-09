@@ -69,12 +69,16 @@ $nodes = [
 		'timeout'	=> 30, // write/recv timeout, default 30, stream transport only
 		'persistent'	=> true, // use persistent PHP connection, default false,  stream transport only  
 	],
-	[				// advanced way, using SSL
+	[				// advanced way, using SSL(TLS)
 		'class'		=> 'Cassandra\Connection\Stream', // "class" must be defined as "Cassandra\Connection\Stream" for ssl or tls
 		'host'		=> 'ssl://10.205.48.70',// or 'tls://10.205.48.70'
 		'port'		=> 9042,
 		'username'	=> 'admin',
 		'password'	=> 'pass',
+		//disable certificate verification
+		'ssl'		=> ['verify_peer'=>false,'verify_peer_name'=>false],
+		//with SSL certificate validation, no name check
+		//'ssl'		=> ['cafile' => 'cassandra.pem', 'verify_peer_name'=>false]
 	],
 ];
 
